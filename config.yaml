@@ -1,0 +1,37 @@
+key_delay: 0.05
+
+macro_0:
+  name: Reinforcement
+  play_hotkey: f1
+  filename: strategems/basic/reinforce.json
+
+macro_1:
+  name: Resupply
+  play_hotkey: f6
+  filename: strategems/basic/resupply.json
+
+macro_2:
+  name: Laser Canon
+  play_hotkey: f7
+  filename: strategems/support weapon/laser cannon.json
+
+macro_3:
+  name: Watchdog Rover
+  play_hotkey: f8
+  filename: strategems/support weapon/watchdog rover.json
+
+macro_4:
+  name: Rocket Sentry
+  play_hotkey: f9
+  filename: strategems/sentry/rocket sentry.json
+
+macro_5:
+  name: Eagle Cluster Bomb
+  play_hotkey: f10
+  filename: strategems/eagle/eagle cluster bomb.json
+
+macro_6:
+  name: Record
+  play_hotkey: f3
+  record_hotkey: alt+ctrl+f3
+  filename: strategems/record.json
