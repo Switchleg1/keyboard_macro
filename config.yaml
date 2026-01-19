@@ -33,5 +33,5 @@ macro_5:
 macro_6:
   name: Record
   play_hotkey: f3
-  record_hotkey: alt+ctrl+f3
+  record_hotkey: alt+ctrl+f2
   filename: strategems/record.json

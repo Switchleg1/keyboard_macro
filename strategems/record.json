@@ -1,16 +1,12 @@
 [
     "{\"event_type\": \"down\", \"scan_code\": 56, \"name\": \"alt\", \"time\": 0, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 56, \"name\": \"alt\", \"time\": 0.05, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 56, \"name\": \"alt\", \"time\": 0.1, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 56, \"name\": \"alt\", \"time\": 0.15000000000000002, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 56, \"name\": \"alt\", \"time\": 0.2, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 80, \"name\": \"down\", \"time\": 0.25, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 80, \"name\": \"down\", \"time\": 0.3, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 80, \"name\": \"down\", \"time\": 0.35, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 80, \"name\": \"down\", \"time\": 0.39999999999999997, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 72, \"name\": \"up\", \"time\": 0.44999999999999996, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 72, \"name\": \"up\", \"time\": 0.49999999999999994, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 77, \"name\": \"right\", \"time\": 0.5499999999999999, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 77, \"name\": \"right\", \"time\": 0.6, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 56, \"name\": \"alt\", \"time\": 0.65, \"is_keypad\": false}"
+    "{\"event_type\": \"down\", \"scan_code\": 80, \"name\": \"down\", \"time\": 0.05, \"is_keypad\": false}",
+    "{\"event_type\": \"up\", \"scan_code\": 80, \"name\": \"down\", \"time\": 0.1, \"is_keypad\": false}",
+    "{\"event_type\": \"down\", \"scan_code\": 80, \"name\": \"down\", \"time\": 0.15000000000000002, \"is_keypad\": false}",
+    "{\"event_type\": \"up\", \"scan_code\": 80, \"name\": \"down\", \"time\": 0.2, \"is_keypad\": false}",
+    "{\"event_type\": \"down\", \"scan_code\": 72, \"name\": \"up\", \"time\": 0.25, \"is_keypad\": false}",
+    "{\"event_type\": \"up\", \"scan_code\": 72, \"name\": \"up\", \"time\": 0.3, \"is_keypad\": false}",
+    "{\"event_type\": \"down\", \"scan_code\": 77, \"name\": \"right\", \"time\": 0.35, \"is_keypad\": false}",
+    "{\"event_type\": \"up\", \"scan_code\": 77, \"name\": \"right\", \"time\": 0.39999999999999997, \"is_keypad\": false}",
+    "{\"event_type\": \"up\", \"scan_code\": 56, \"name\": \"alt\", \"time\": 0.44999999999999996, \"is_keypad\": false}"
 ]
