@@ -1,4 +1,8 @@
 key_delay: 0.05
+record_queue_size: 1
+play_queue_size: 1
+use_keyboard: true
+use_mouse: true
 
 macro_0:
   name: Reinforcement
@@ -32,6 +36,6 @@ macro_5:
 
 macro_6:
   name: Record
-  play_hotkey: f3
+  play_hotkey: f2
   record_hotkey: alt+ctrl+f2
   filename: strategems/record.json
