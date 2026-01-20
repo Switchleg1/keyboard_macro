@@ -9,13 +9,17 @@ from keyboard._keyboard_event import KEY_DOWN, KEY_UP
 from mouse._mouse_event import LEFT, RIGHT, MIDDLE, X, X2, UP, DOWN, DOUBLE
 
 #globals
-APP_VERSION             = "v0.3"
+APP_VERSION             = "v0.4"
 CONFIG_FILENAME         = "config.yaml"
 DEFAULT_KEY_DELAY       = 0.05
-DEFAULT_PLAY_SIZE       = 3
+DEFAULT_PLAY_SIZE       = 1
 DEFAULT_RECORD_SIZE     = 1
 DEFAULT_USE_KEYBOARD    = True
 DEFAULT_USE_MOUSE       = True
+DEFAULT_KEY_TIMEOUT     = 30.0
+
+key_delay               = DEFAULT_KEY_DELAY
+key_timeout             = DEFAULT_KEY_TIMEOUT
 
 use_keyboard            = DEFAULT_USE_KEYBOARD
 use_mouse               = DEFAULT_USE_MOUSE
@@ -24,7 +28,6 @@ key_map                 = {}
 mouse_map               = {}
 
 macro_list              = []
-key_delay               = DEFAULT_KEY_DELAY
 
 record_queue_size       = DEFAULT_RECORD_SIZE
 record_queue            = None
@@ -35,6 +38,7 @@ play_queue              = None
 
 def read_configuration(filename):
     global key_delay
+    global key_timeout
     global record_queue_size
     global play_queue_size
     global use_keyboard
@@ -51,6 +55,11 @@ def read_configuration(filename):
             if 'key_delay' in config_data:
                 key_delay = config_data['key_delay']
             print(f"  Set default key delay: {key_delay}")
+
+            #key_timeout
+            if 'key_timeout' in config_data:
+                key_timeout = config_data['key_timeout']
+            print(f"  Using key timeout of: {key_timeout}")
 
             #play_queue_size
             if 'play_queue_size' in config_data:
@@ -178,18 +187,16 @@ def check_hot_key(hot_key_list):
     for key in hot_key_list:
         if key.startswith('mouse_'):
             key_sub = key[6:]
-            if key_sub not in mouse_map or mouse_map[key_sub] == False:
+            if key_sub not in mouse_map or mouse_map[key_sub]['active'] == False or time.time() - mouse_map[key_sub]['time'] > key_timeout:
                 return False
 
-        elif key not in key_map or key_map[key] == False:
+        elif key not in key_map or key_map[key]['active'] == False or time.time() - key_map[key]['time'] > key_timeout:
             return False
 
     return True
 
 
-def on_key_pressed(key):
-    key_map[key] = True
-
+def check_macros():
     for macro in macro_list:
         if 'play_hotkey' in macro and check_hot_key(macro['play_hotkey']):
             on_play_key(macro)
@@ -198,21 +205,28 @@ def on_key_pressed(key):
             on_record_key(macro)
 
 
-def on_key_released(key):
-    key_map[key] = False
-
-
 def on_key_event(event):
-    if event.event_type == KEY_DOWN:
-        on_key_pressed(event.name)
+    isActive = event.event_type == KEY_DOWN
 
-    elif event.event_type == KEY_UP:
-        on_key_released(event.name)
+    key_map[event.name] = {
+        'time'      : time.time(),
+        'active'    : isActive
+    }
+
+    if isActive:
+        check_macros()
 
 
 def on_mouse_button(button, state):
-    mouse_map[button] = state
-    #print(f"{button} - {state}")
+    isActive = state == DOWN
+
+    mouse_map[button] = {
+        'time'      : time.time(),
+        'active'    : isActive
+    }
+
+    if isActive:
+        check_macros()
 
 
 ### Begin ###

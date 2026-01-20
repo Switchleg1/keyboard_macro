@@ -1,4 +1,5 @@
 key_delay: 0.05
+key_timeout: 30
 record_queue_size: 1
 play_queue_size: 1
 use_keyboard: true
@@ -35,6 +36,16 @@ macro_5:
   filename: strategems/eagle/eagle cluster bomb.json
 
 macro_6:
+  name: Reinforcement
+  play_hotkey: mouse_x
+  filename: strategems/basic/reinforce.json
+
+macro_7:
+  name: Eagle Cluster Bomb
+  play_hotkey: mouse_x2
+  filename: strategems/eagle/eagle cluster bomb.json
+
+macro_8:
   name: Record
   play_hotkey: f2
   record_hotkey: alt+ctrl+f2
