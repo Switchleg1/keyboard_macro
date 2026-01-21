@@ -1,16 +1,58 @@
 [
-    "{\"event_type\": \"down\", \"scan_code\": 29, \"name\": \"ctrl\", \"time\": 0, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 80, \"name\": \"down\", \"time\": 0.05, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 80, \"name\": \"down\", \"time\": 0.1, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 72, \"name\": \"up\", \"time\": 0.15, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 72, \"name\": \"up\", \"time\": 0.2, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 75, \"name\": \"left\", \"time\": 0.25, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 75, \"name\": \"left\", \"time\": 0.3, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 72, \"name\": \"up\", \"time\": 0.35, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 72, \"name\": \"up\", \"time\": 0.4, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 77, \"name\": \"right\", \"time\": 0.45, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 77, \"name\": \"right\", \"time\": 0.5, \"is_keypad\": false}",
-    "{\"event_type\": \"down\", \"scan_code\": 77, \"name\": \"right\", \"time\": 0.55, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 77, \"name\": \"right\", \"time\": 0.6, \"is_keypad\": false}",
-    "{\"event_type\": \"up\", \"scan_code\": 29, \"name\": \"ctrl\", \"time\": 0.65, \"is_keypad\": false}"
+  {
+    "name": "ctrl",
+    "state": "down"
+  },
+  {
+    "name": "down",
+    "state": "down"
+  },
+  {
+    "name": "down",
+    "state": "up"
+  },
+  {
+    "name": "up",
+    "state": "down"
+  },
+  {
+    "name": "up",
+    "state": "up"
+  },
+  {
+    "name": "left",
+    "state": "down"
+  },
+  {
+    "name": "left",
+    "state": "up"
+  },
+  {
+    "name": "up",
+    "state": "down"
+  },
+  {
+    "name": "up",
+    "state": "up"
+  },
+  {
+    "name": "right",
+    "state": "down"
+  },
+  {
+    "name": "right",
+    "state": "up"
+  },
+  {
+    "name": "right",
+    "state": "down"
+  },
+  {
+    "name": "right",
+    "state": "up"
+  },
+  {
+    "name": "ctrl",
+    "state": "up"
+  }
 ]
