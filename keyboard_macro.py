@@ -9,40 +9,45 @@ from keyboard._keyboard_event import KEY_DOWN, KEY_UP
 from mouse._mouse_event import LEFT, RIGHT, MIDDLE, X, X2, UP, DOWN, DOUBLE
 
 #globals
-APP_VERSION             = "v0.5"
-CONFIG_FILENAME         = "config.yaml"
-DEFAULT_KEY_DELAY       = 0.05
-DEFAULT_PLAY_SIZE       = 1
-DEFAULT_RECORD_SIZE     = 1
-DEFAULT_USE_KEYBOARD    = True
-DEFAULT_USE_MOUSE       = True
-DEFAULT_KEY_TIMEOUT     = 30.0
-DEFAULT_MACRO_COOLDOWN  = 1.0
+APP_VERSION                     = "v0.65"
+CONFIG_FILENAME                 = "config.yaml"
+DEFAULT_KEY_DELAY               = 0.05
+DEFAULT_PLAY_SIZE               = 1
+DEFAULT_RECORD_SIZE             = 1
+DEFAULT_USE_KEYBOARD            = True
+DEFAULT_USE_MOUSE               = True
+DEFAULT_KEY_TIMEOUT             = 30.0
+DEFAULT_MACRO_COOLDOWN          = 1.0
+DEFAULT_LISTEN_PLAYBACK         = True
 
-key_delay               = DEFAULT_KEY_DELAY
-key_timeout             = DEFAULT_KEY_TIMEOUT
+key_delay                       = DEFAULT_KEY_DELAY
+key_timeout                     = DEFAULT_KEY_TIMEOUT
 
-use_keyboard            = DEFAULT_USE_KEYBOARD
-use_mouse               = DEFAULT_USE_MOUSE
+use_keyboard                    = DEFAULT_USE_KEYBOARD
+use_mouse                       = DEFAULT_USE_MOUSE
 
-key_map                 = {}
-mouse_map               = {}
+key_map                         = {}
+mouse_map                       = {}
 
-macro_default_cooldown  = DEFAULT_MACRO_COOLDOWN
-macro_list              = []
+default_listen_during_playback  = DEFAULT_LISTEN_PLAYBACK
 
-record_macro            = None
-record_active           = False
-record_queue_size       = DEFAULT_RECORD_SIZE
-record_queue            = None
+macro_default_cooldown          = DEFAULT_MACRO_COOLDOWN
+macro_list                      = []
 
-play_queue_size         = DEFAULT_PLAY_SIZE
-play_queue              = None
+record_macro                    = None
+record_active                   = False
+record_queue_size               = DEFAULT_RECORD_SIZE
+record_queue                    = None
+
+play_active                     = False
+play_queue_size                 = DEFAULT_PLAY_SIZE
+play_queue                      = None
 
 
 def read_configuration(filename):
     global key_delay
     global key_timeout
+    global default_listen_during_playback
     global record_queue_size
     global play_queue_size
     global use_keyboard
@@ -64,6 +69,10 @@ def read_configuration(filename):
             if 'key_timeout' in config_data:
                 key_timeout = config_data['key_timeout']
             print(f"  Set key timeout: {key_timeout}")
+
+            if 'default_listen_during_playback' in config_data:
+                default_listen_during_playback = config_data['default_listen_during_playback']
+            print(f"  Set listen for hotkey during playback: {default_listen_during_playback}")
 
             if 'macro_default_cooldown' in config_data:
                 macro_default_cooldown = config_data['macro_default_cooldown']
@@ -111,14 +120,21 @@ def read_configuration(filename):
                 cooldown = macro_default_cooldown
                 if 'cooldown' in macro_dict:
                     cooldown = macro_dict['cooldown']
+                    print(f"    setting cooldown {macro_dict['cooldown']}")
+
+                listen_during_playback = default_listen_during_playback
+                if 'listen_during_playback' in macro_dict:
+                    listen_during_playback = macro_dict['listen_during_playback']
+                    print(f"    setting listen during playback {macro_dict['listen_during_playback']}")
 
                 # build macro
                 macro = {
-                    'name'      : macro_dict['name'],
-                    'filename'  : macro_dict['filename'],
-                    'sequence'  : sequence,
-                    'lastplay'  : time.time(),
-                    'cooldown'  : cooldown
+                    'name'                      : macro_dict['name'],
+                    'filename'                  : macro_dict['filename'],
+                    'sequence'                  : sequence,
+                    'lastplay'                  : time.time(),
+                    'cooldown'                  : cooldown,
+                    'listen_during_playback'    : listen_during_playback
                 }
 
                 if 'play_hotkey' in macro_dict:
@@ -168,8 +184,9 @@ def load_sequence(filename):
 def on_play_key(macro):
     try:
         if time.time() - macro['lastplay'] > macro['cooldown']:
-            macro['lastplay'] = time.time()
-            play_queue.put_nowait(macro)
+            if play_active == False or macro['listen_during_playback']:
+                macro['lastplay'] = time.time()
+                play_queue.put_nowait(macro)
 
     except:
         print(f"Play queue is full - {macro['name']}")
@@ -182,7 +199,7 @@ def on_record_key(macro):
         record_macro = macro
 
 
-def check_hot_key(hot_key_list):
+def check_hotkey(hot_key_list):
     for key in hot_key_list:
         if key.startswith('mouse_'):
             key_sub = key[6:]
@@ -197,14 +214,14 @@ def check_hot_key(hot_key_list):
 
 def check_macros():
     for macro in macro_list:
-        if 'record_hotkey' in macro and check_hot_key(macro['record_hotkey']):
+        if 'record_hotkey' in macro and check_hotkey(macro['record_hotkey']):
             on_record_key(macro)
 
-        elif 'play_hotkey' in macro and check_hot_key(macro['play_hotkey']):
+        elif 'play_hotkey' in macro and check_hotkey(macro['play_hotkey']):
             on_play_key(macro)
         
 
-def record_key(name, state):
+def place_key_in_record_queue(name, state):
     key = {
         "name"  : name,
         "state" : state
@@ -225,8 +242,9 @@ def on_key_event(event):
         'active'    : isPressed
     }
 
-    if record_active:
-        record_key(event.name, event.event_type)
+    if record_macro is not None:
+        if record_active:
+            place_key_in_record_queue(event.name, event.event_type)
 
     elif isPressed:
         check_macros()
@@ -240,8 +258,9 @@ def on_mouse_button(button, state):
         'active'    : isPressed
     }
 
-    if record_active:
-        record_key(f"mouse_{button}", state)
+    if record_macro is not None:
+        if record_active:
+            place_key_in_record_queue(f"mouse_{button}", state)
 
     elif isPressed:
         check_macros()
@@ -322,6 +341,7 @@ while True:
         macro = play_queue.get()
 
         print(f"Playing - {macro['name']}")
+        play_active = True
         for key in macro['sequence']:
             if key['name'].startswith('mouse_'):
                 key_sub = key['name'][6:]
@@ -335,5 +355,7 @@ while True:
                 keyboard.send(key['name'], key['state'] == 'down', key['state'] == 'up')
 
             time.sleep(key_delay)
+
+        play_active = False
 
     time.sleep(key_delay)

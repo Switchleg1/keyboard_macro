@@ -1,16 +1,19 @@
 key_delay: 0.05
 key_timeout: 30
-record_queue_size: 1
+default_listen_during_playback: true
+macro_default_cooldown: 1.0
 play_queue_size: 1
+record_queue_size: 1
 use_keyboard: true
 use_mouse: true
-
 
 macro_0:
   name: Record
   play_hotkey: f2
   record_hotkey: alt+ctrl+f2
   filename: strategems/record.json
+  cooldown: 2.0
+  listen_during_playback: false
 
 macro_1:
   name: Reinforcement
