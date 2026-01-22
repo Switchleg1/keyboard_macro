@@ -6,7 +6,7 @@ import keyboard
 import mouse
 
 from keyboard._keyboard_event import KEY_DOWN, KEY_UP
-from mouse._mouse_event import LEFT, RIGHT, MIDDLE, X, X2, UP, DOWN, DOUBLE
+from mouse._mouse_event import ButtonEvent, WheelEvent, LEFT, RIGHT, MIDDLE, X, X2, UP, DOWN, DOUBLE
 
 #globals
 APP_VERSION                     = "v0.65"
@@ -16,6 +16,7 @@ DEFAULT_PLAY_SIZE               = 1
 DEFAULT_RECORD_SIZE             = 1
 DEFAULT_USE_KEYBOARD            = True
 DEFAULT_USE_MOUSE               = True
+DEFAULT_USE_MOUSE_WHEEL         = True
 DEFAULT_KEY_TIMEOUT             = 30.0
 DEFAULT_MACRO_COOLDOWN          = 1.0
 DEFAULT_LISTEN_PLAYBACK         = True
@@ -25,6 +26,7 @@ key_timeout                     = DEFAULT_KEY_TIMEOUT
 
 use_keyboard                    = DEFAULT_USE_KEYBOARD
 use_mouse                       = DEFAULT_USE_MOUSE
+use_mouse_wheel                 = DEFAULT_USE_MOUSE_WHEEL
 
 key_map                         = {}
 mouse_map                       = {}
@@ -48,11 +50,12 @@ def read_configuration(filename):
     global key_delay
     global key_timeout
     global default_listen_during_playback
-    global record_queue_size
+    global macro_default_cooldown
     global play_queue_size
+    global record_queue_size
     global use_keyboard
     global use_mouse
-    global macro_default_cooldown
+    global use_mouse_wheel
 
     try:
         #load config file
@@ -94,6 +97,9 @@ def read_configuration(filename):
                 use_mouse = config_data['use_mouse']
             print(f"  Using mouse input: {use_mouse}")
 
+            if 'use_mouse_wheel' in config_data:
+                use_mouse_wheel = config_data['use_mouse_wheel']
+            print(f"  Using mouse wheel input: {use_mouse_wheel}")
 
             macro_positon = 0
             macro_string = f"macro_{macro_positon}"
@@ -212,16 +218,30 @@ def check_hotkey(hot_key_list):
     return True
 
 
-def check_macros():
+def check_wheel(hot_key_list, wheelDirection):
+    if len(hot_key_list) != 1:
+        return False
+
+    if hot_key_list[0] == 'mouse_wheel_up' and wheelDirection == UP:
+        return True
+
+    if hot_key_list[0] == 'mouse_wheel_down' and wheelDirection == DOWN:
+        return True
+
+    return False
+
+
+
+def check_macros(isWheel=False, wheelDirection=UP):
     for macro in macro_list:
-        if 'record_hotkey' in macro and check_hotkey(macro['record_hotkey']):
+        if 'record_hotkey' in macro and (check_hotkey(macro['record_hotkey']) or check_wheel(macro['record_hotkey'], wheelDirection)):
             on_record_key(macro)
 
-        elif 'play_hotkey' in macro and check_hotkey(macro['play_hotkey']):
+        elif 'play_hotkey' in macro and (check_hotkey(macro['play_hotkey']) or check_wheel(macro['play_hotkey'], wheelDirection)):
             on_play_key(macro)
         
 
-def place_key_in_record_queue(name, state):
+def place_in_record_queue(name, state):
     key = {
         "name"  : name,
         "state" : state
@@ -244,10 +264,18 @@ def on_key_event(event):
 
     if record_macro is not None:
         if record_active:
-            place_key_in_record_queue(event.name, event.event_type)
+            place_in_record_queue(event.name, event.event_type)
 
     elif isPressed:
         check_macros()
+
+
+def on_mouse_event(event):
+    if isinstance(event, mouse.ButtonEvent):
+        on_mouse_button(event.button, event.event_type)
+
+    elif use_mouse_wheel and isinstance(event, mouse.WheelEvent):
+        on_mouse_wheel(event.delta)
 
 
 def on_mouse_button(button, state):
@@ -260,10 +288,21 @@ def on_mouse_button(button, state):
 
     if record_macro is not None:
         if record_active:
-            place_key_in_record_queue(f"mouse_{button}", state)
+            place_in_record_queue(f"mouse_{button}", state)
 
     elif isPressed:
         check_macros()
+
+
+def on_mouse_wheel(delta):
+    button_state = UP if delta > 0 else DOWN
+
+    if record_macro is not None:
+        if record_active:
+            place_in_record_queue(f"mouse_wheel", button_state)
+
+    else:
+         check_macros(isWheel=True, wheelDirection=button_state)
 
 
 ### Begin ###
@@ -279,16 +318,7 @@ if use_keyboard:
     keyboard.hook(lambda e: on_key_event(e))
 
 if use_mouse:
-    mouse.on_button(on_mouse_button, (LEFT, DOWN), [LEFT], [DOWN])
-    mouse.on_button(on_mouse_button, (LEFT, UP), [LEFT], [UP])
-    mouse.on_button(on_mouse_button, (RIGHT, DOWN), [RIGHT], [DOWN])
-    mouse.on_button(on_mouse_button, (RIGHT, UP), [RIGHT], [UP])
-    mouse.on_button(on_mouse_button, (MIDDLE, DOWN), [MIDDLE], [DOWN])
-    mouse.on_button(on_mouse_button, (MIDDLE, UP), [MIDDLE], [UP])
-    mouse.on_button(on_mouse_button, (X, DOWN), [X], [DOWN])
-    mouse.on_button(on_mouse_button, (X, UP), [X], [UP])
-    mouse.on_button(on_mouse_button, (X2, DOWN), [X2], [DOWN])
-    mouse.on_button(on_mouse_button, (X2, UP), [X2], [UP])
+    mouse.hook(on_mouse_event)
 
 # The program continues to run, listening for the hotkey in a separate thread
 # Wait for item in either queue
@@ -316,7 +346,7 @@ while True:
         key = record_queue.get()
         last_key = None
         while key['name'] != 'esc' or key['state'] == UP:
-            if last_key is not None and key != last_key:
+            if (last_key is not None and key != last_key) or key['name'] == 'mouse_wheel':
                 sequence.append(key)
 
             last_key = key
@@ -328,7 +358,10 @@ while True:
         #simplify the recording string
         sequence_string = ""
         for key in sequence:
-            if key['state'] == 'down':
+            if key['name'] == 'mouse_wheel':
+                sequence_string += f"mouse_wheel_{key['state']} "
+
+            elif key['state'] == 'down':
                 sequence_string += f"{key['name']} "
 
         print(f"Recorded: {sequence_string}")
@@ -344,15 +377,20 @@ while True:
         play_active = True
         for key in macro['sequence']:
             if key['name'].startswith('mouse_'):
-                key_sub = key['name'][6:]
-                if key['state'] == DOWN:
-                    mouse.press(key_sub)
+                if use_mouse:
+                    key_sub = key['name'][6:]
 
-                else:
-                    mouse.release(key_sub)
+                    if use_mouse_wheel and key_sub == 'wheel':
+                        mouse.wheel(1 if key['state'] == UP else -1)
 
-            else:
-                keyboard.send(key['name'], key['state'] == 'down', key['state'] == 'up')
+                    elif key['state'] == DOWN:
+                        mouse.press(key_sub)
+
+                    else:
+                        mouse.release(key_sub)
+
+            elif use_keyboard:
+                keyboard.send(key['name'], key['state'] == DOWN, key['state'] == UP)
 
             time.sleep(key_delay)
 

@@ -38,5 +38,17 @@
     {
         "name": "ctrl",
         "state": "up"
+    },
+    {
+        "name": "mouse_wheel",
+        "state": "down"
+    },
+    {
+        "name": "mouse_wheel",
+        "state": "down"
+    },
+    {
+        "name": "mouse_wheel",
+        "state": "up"
     }
 ]
