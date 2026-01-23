@@ -40,15 +40,11 @@
         "state": "up"
     },
     {
-        "name": "mouse_wheel",
+        "name": "mouse_wheel_down",
         "state": "down"
     },
     {
-        "name": "mouse_wheel",
+        "name": "mouse_wheel_up",
         "state": "down"
-    },
-    {
-        "name": "mouse_wheel",
-        "state": "up"
     }
 ]

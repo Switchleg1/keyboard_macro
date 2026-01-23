@@ -1,4 +1,5 @@
 import json
+from pickle import FALSE
 import time
 import yaml
 import queue
@@ -9,7 +10,7 @@ from keyboard._keyboard_event import KEY_DOWN, KEY_UP
 from mouse._mouse_event import ButtonEvent, WheelEvent, LEFT, RIGHT, MIDDLE, X, X2, UP, DOWN, DOUBLE
 
 #globals
-APP_VERSION                     = "v0.65"
+APP_VERSION                     = "v0.7"
 CONFIG_FILENAME                 = "config.yaml"
 DEFAULT_KEY_DELAY               = 0.05
 DEFAULT_PLAY_SIZE               = 1
@@ -106,6 +107,7 @@ def read_configuration(filename):
             while macro_string in config_data:
                 macro_dict = config_data[macro_string]
 
+                #check for required items
                 if 'name' not in macro_dict:
                     print(f"  {macro_string} - does not have a name")
                     break
@@ -123,6 +125,7 @@ def read_configuration(filename):
                 if sequence is None:
                     break
 
+                #optional items
                 cooldown = macro_default_cooldown
                 if 'cooldown' in macro_dict:
                     cooldown = macro_dict['cooldown']
@@ -143,6 +146,7 @@ def read_configuration(filename):
                     'listen_during_playback'    : listen_during_playback
                 }
 
+                #add hotkey lists
                 if 'play_hotkey' in macro_dict:
                     macro['play_hotkey'] = macro_dict['play_hotkey'].split('+')
                     print(f"    assigning play_hotkey [{macro_dict['play_hotkey']}]")
@@ -205,10 +209,17 @@ def on_record_key(macro):
         record_macro = macro
 
 
-def check_hotkey(hot_key_list):
+def check_hotkey(hot_key_list, isWheel=False, wheelDirection=UP):
     for key in hot_key_list:
-        if key.startswith('mouse_'):
+        if key.startswith('mouse_wheel_'):
+            key_sub = key[12:]
+
+            if isWheel == False or wheelDirection != key_sub:
+                return False
+
+        elif key.startswith('mouse_'):
             key_sub = key[6:]
+            
             if key_sub not in mouse_map or mouse_map[key_sub]['active'] == False or time.time() - mouse_map[key_sub]['time'] > key_timeout:
                 return False
 
@@ -218,26 +229,12 @@ def check_hotkey(hot_key_list):
     return True
 
 
-def check_wheel(hot_key_list, wheelDirection):
-    if len(hot_key_list) != 1:
-        return False
-
-    if hot_key_list[0] == 'mouse_wheel_up' and wheelDirection == UP:
-        return True
-
-    if hot_key_list[0] == 'mouse_wheel_down' and wheelDirection == DOWN:
-        return True
-
-    return False
-
-
-
 def check_macros(isWheel=False, wheelDirection=UP):
     for macro in macro_list:
-        if 'record_hotkey' in macro and (check_hotkey(macro['record_hotkey']) or check_wheel(macro['record_hotkey'], wheelDirection)):
+        if 'record_hotkey' in macro and check_hotkey(macro['record_hotkey'], isWheel, wheelDirection):
             on_record_key(macro)
 
-        elif 'play_hotkey' in macro and (check_hotkey(macro['play_hotkey']) or check_wheel(macro['play_hotkey'], wheelDirection)):
+        elif 'play_hotkey' in macro and check_hotkey(macro['play_hotkey'], isWheel, wheelDirection):
             on_play_key(macro)
         
 
@@ -299,10 +296,10 @@ def on_mouse_wheel(delta):
 
     if record_macro is not None:
         if record_active:
-            place_in_record_queue(f"mouse_wheel", button_state)
+            place_in_record_queue(f"mouse_wheel_{button_state}", DOWN)
 
     else:
-         check_macros(isWheel=True, wheelDirection=button_state)
+        check_macros(isWheel=True, wheelDirection=button_state)
 
 
 ### Begin ###
@@ -358,10 +355,7 @@ while True:
         #simplify the recording string
         sequence_string = ""
         for key in sequence:
-            if key['name'] == 'mouse_wheel':
-                sequence_string += f"mouse_wheel_{key['state']} "
-
-            elif key['state'] == 'down':
+            if key['state'] == 'down':
                 sequence_string += f"{key['name']} "
 
         print(f"Recorded: {sequence_string}")
@@ -375,24 +369,35 @@ while True:
 
         print(f"Playing - {macro['name']}")
         play_active = True
-        for key in macro['sequence']:
-            if key['name'].startswith('mouse_'):
-                if use_mouse:
-                    key_sub = key['name'][6:]
+        try:
+            for key in macro['sequence']:
+                if key['name'].startswith('mouse_wheel_'):
+                    if use_mouse_wheel:
+                        key_sub = key['name'][12:]
 
-                    if use_mouse_wheel and key_sub == 'wheel':
-                        mouse.wheel(1 if key['state'] == UP else -1)
+                        if key_sub == DOWN:
+                            mouse.wheel(-1)
 
-                    elif key['state'] == DOWN:
-                        mouse.press(key_sub)
+                        elif key_sub == UP:
+                            mouse.wheel(1)
 
-                    else:
-                        mouse.release(key_sub)
+                elif key['name'].startswith('mouse_'):
+                    if use_mouse:
+                        key_sub = key['name'][6:]
 
-            elif use_keyboard:
-                keyboard.send(key['name'], key['state'] == DOWN, key['state'] == UP)
+                        if key['state'] == DOWN:
+                            mouse.press(key_sub)
 
-            time.sleep(key_delay)
+                        else:
+                            mouse.release(key_sub)
+
+                elif use_keyboard:
+                    keyboard.send(key['name'], key['state'] == DOWN, key['state'] == UP)
+
+                time.sleep(key['delay'] if 'delay' in key else key_delay)
+
+        except Exception as e:
+            print(f"Failed - {e}")
 
         play_active = False
 

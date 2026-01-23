@@ -48,7 +48,7 @@ macro_6:
 
 macro_7:
   name: Reinforcement
-  play_hotkey: mouse_x
+  play_hotkey: alt+mouse_wheel_down
   filename: strategems/basic/reinforce.json
 
 macro_8:
