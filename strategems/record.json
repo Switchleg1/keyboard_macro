@@ -36,15 +36,23 @@
         "state": "up"
     },
     {
-        "name": "ctrl",
+        "name": "down",
+        "state": "down"
+    },
+    {
+        "name": "down",
         "state": "up"
     },
     {
-        "name": "mouse_wheel_down",
+        "name": "up",
         "state": "down"
     },
     {
-        "name": "mouse_wheel_up",
-        "state": "down"
+        "name": "up",
+        "state": "up"
+    },
+    {
+        "name": "ctrl",
+        "state": "up"
     }
 ]

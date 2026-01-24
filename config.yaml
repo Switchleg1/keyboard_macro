@@ -1,9 +1,12 @@
 key_delay: 0.05
 key_timeout: 30
 default_listen_during_playback: true
+default_record_delay: true
+default_record_mouse_movement: true
+default_record_mouse_fps: 30
 macro_default_cooldown: 1.0
-play_queue_size: 1
-record_queue_size: 1
+play_queue_size: 3
+record_queue_size: 3
 use_keyboard: true
 use_mouse: true
 use_mouse_wheel: true
@@ -15,6 +18,9 @@ macro_0:
   filename: strategems/record.json
   cooldown: 2.0
   listen_during_playback: false
+  record_delay: false
+  record_mouse_movement: false
+  record_mouse_fps: 10
 
 macro_1:
   name: Reinforcement
@@ -47,11 +53,21 @@ macro_6:
   filename: strategems/eagle/eagle cluster bomb.json
 
 macro_7:
-  name: Reinforcement
-  play_hotkey: alt+mouse_wheel_down
-  filename: strategems/basic/reinforce.json
+  name: Rocket Sentry
+  play_hotkey: mouse_x
+  filename: strategems/sentry/rocket sentry.json
 
 macro_8:
   name: Eagle Cluster Bomb
   play_hotkey: mouse_x2
   filename: strategems/eagle/eagle cluster bomb.json
+
+macro_9:
+  name: Reinforcement
+  play_hotkey: alt+mouse_wheel_down
+  filename: strategems/basic/reinforce.json
+
+macro_10:
+  name: Resupply
+  play_hotkey: alt+mouse_wheel_up
+  filename: strategems/basic/resupply.json
