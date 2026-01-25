@@ -1,35 +1,39 @@
-key_delay: 0.05
-key_timeout: 30
-default_listen_during_playback: true
-default_record_delay: true
-default_record_mouse_movement: true
-default_record_mouse_fps: 30
-macro_default_cooldown: 1.0
+key_timeout: 3
 play_queue_size: 3
 record_queue_size: 3
 use_keyboard: true
 use_mouse: true
 use_mouse_wheel: true
+use_gui: true
+default_playback_delay: 0.05
+default_listen_during_playback: true
+default_record_delay: false
+default_record_mouse_movement: false
+default_record_mouse_fps: 30
+default_playback_speed: 1.0
+default_macro_cooldown: 1.0
 
 macro_0:
   name: Record
   play_hotkey: f2
   record_hotkey: alt+ctrl+f2
   filename: strategems/record.json
-  cooldown: 2.0
+  playback_delay: 0.05
   listen_during_playback: false
-  record_delay: false
-  record_mouse_movement: false
+  record_delay: true
+  record_mouse_movement: true
   record_mouse_fps: 10
+  playback_speed: 1.0
+  cooldown: 2.0
 
 macro_1:
   name: Reinforcement
-  play_hotkey: f1
+  play_hotkey: f1|alt+mouse_wheel_down
   filename: strategems/basic/reinforce.json
 
 macro_2:
   name: Resupply
-  play_hotkey: f6
+  play_hotkey: f6|alt+mouse_wheel_up
   filename: strategems/basic/resupply.json
 
 macro_3:
@@ -42,32 +46,37 @@ macro_4:
   play_hotkey: f8
   filename: strategems/support weapon/watchdog rover.json
 
-macro_5:
-  name: Rocket Sentry
-  play_hotkey: f9
-  filename: strategems/sentry/rocket sentry.json
+macro_*:
+  name: Emancipator Exosuit
+  play_hotkey: f9|mouse_x
+  filename: strategems/support weapon/emancipator exosuit.json
 
 macro_6:
-  name: Eagle Cluster Bomb
-  play_hotkey: f10
-  filename: strategems/eagle/eagle cluster bomb.json
+  name: Eagle Napalm Airstrike
+  play_hotkey: f10|mouse_x2
+  filename: strategems/eagle/eagle napalm airstrike.json
 
 macro_7:
-  name: Rocket Sentry
-  play_hotkey: mouse_x
-  filename: strategems/sentry/rocket sentry.json
+  name: SEAF Artillery
+  play_hotkey: f11
+  filename: strategems/basic/seaf artillery.json
 
-macro_8:
+macro_*:
+  name: Eagle Airstrike
+  play_hotkey: f10|mouse_x2
+  filename: strategems/eagle/eagle airstrike.json
+
+macro_*:
   name: Eagle Cluster Bomb
-  play_hotkey: mouse_x2
+  play_hotkey: f10|mouse_x2
   filename: strategems/eagle/eagle cluster bomb.json
 
-macro_9:
-  name: Reinforcement
-  play_hotkey: alt+mouse_wheel_down
-  filename: strategems/basic/reinforce.json
+macro_5:
+  name: Rocket Sentry
+  play_hotkey: f9|mouse_x
+  filename: strategems/sentry/rocket sentry.json
 
-macro_10:
-  name: Resupply
-  play_hotkey: alt+mouse_wheel_up
-  filename: strategems/basic/resupply.json
+macro_*:
+  name: Machine Gun Sentry
+  play_hotkey: f9|mouse_x
+  filename: strategems/sentry/Machine Gun Sentry.json

@@ -1,58 +1,77 @@
 [
     {
-        "name": "ctrl",
-        "state": "down"
+        "name": "esc",
+        "state": "up",
+        "delay": 0.036052703857421875
     },
     {
-        "name": "down",
-        "state": "down"
+        "name": "mouse_move",
+        "state": "149:280",
+        "delay": 0.06477952003479004
     },
     {
-        "name": "down",
-        "state": "up"
+        "name": "mouse_move",
+        "state": "306:524",
+        "delay": 0.10000443458557129
     },
     {
-        "name": "down",
-        "state": "down"
+        "name": "mouse_move",
+        "state": "525:842",
+        "delay": 0.10000324249267578
     },
     {
-        "name": "down",
-        "state": "up"
+        "name": "mouse_move",
+        "state": "759:1104",
+        "delay": 0.10004901885986328
     },
     {
-        "name": "up",
-        "state": "down"
+        "name": "mouse_move",
+        "state": "981:1272",
+        "delay": 0.10097932815551758
     },
     {
-        "name": "up",
-        "state": "up"
+        "name": "mouse_move",
+        "state": "1155:1394",
+        "delay": 0.10000157356262207
     },
     {
-        "name": "right",
-        "state": "down"
+        "name": "mouse_move",
+        "state": "1361:1506",
+        "delay": 0.10000324249267578
     },
     {
-        "name": "right",
-        "state": "up"
+        "name": "mouse_move",
+        "state": "1560:1602",
+        "delay": 0.10004425048828125
     },
     {
-        "name": "down",
-        "state": "down"
+        "name": "mouse_move",
+        "state": "1709:1621",
+        "delay": 0.10096192359924316
     },
     {
-        "name": "down",
-        "state": "up"
+        "name": "mouse_move",
+        "state": "1752:1440",
+        "delay": 0.10099649429321289
     },
     {
-        "name": "up",
-        "state": "down"
+        "name": "mouse_move",
+        "state": "1772:1287",
+        "delay": 0.10000014305114746
     },
     {
-        "name": "up",
-        "state": "up"
+        "name": "mouse_move",
+        "state": "1776:1164",
+        "delay": 0.10000252723693848
     },
     {
-        "name": "ctrl",
-        "state": "up"
+        "name": "mouse_move",
+        "state": "1777:1097",
+        "delay": 0.10097241401672363
+    },
+    {
+        "name": "mouse_move",
+        "state": "1777:1062",
+        "delay": 0.10404729843139648
     }
 ]

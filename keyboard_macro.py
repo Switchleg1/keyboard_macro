@@ -1,238 +1,57 @@
-import json
 import time
-import yaml
 import queue
 import keyboard
 import mouse
 import ctypes
-
+import sys
+import threading
+import lib.Constants as Constants
+import lib.ConfigFile as ConfigFile
+import lib.Sequences as Sequences
+from PyQt6.QtWidgets import QApplication
 from keyboard._keyboard_event import KEY_DOWN, KEY_UP
 from mouse._mouse_event import MoveEvent, ButtonEvent, WheelEvent, LEFT, RIGHT, MIDDLE, X, X2, UP, DOWN, DOUBLE
+from lib.UI.MainWindow import MainWindow
+from lib.SettingType import SettingType
 
-#globals
-APP_VERSION                     = "v0.85"
-CONFIG_FILENAME                 = "config.yaml"
-DEFAULT_KEY_DELAY               = 0.05
-DEFAULT_PLAY_SIZE               = 3
-DEFAULT_RECORD_SIZE             = 3
-DEFAULT_USE_KEYBOARD            = True
-DEFAULT_USE_MOUSE               = True
-DEFAULT_USE_MOUSE_WHEEL         = True
-DEFAULT_KEY_TIMEOUT             = 30.0
-DEFAULT_MACRO_COOLDOWN          = 1.0
-DEFAULT_LISTEN_PLAYBACK         = True
-DEFAULT_RECORD_DELAY            = False
-DEFAULT_MOUSE_MOVEMENT          = False
-DEFAULT_MOUSE_FPS               = 30
+settings = {
+    'key_timeout'                       : SettingType(Constants.DEFAULT_KEY_TIMEOUT, "Set key timeout", 2),
 
-key_delay                       = DEFAULT_KEY_DELAY
-key_timeout                     = DEFAULT_KEY_TIMEOUT
+    'play_queue_size'                   : SettingType(Constants.DEFAULT_PLAY_SIZE, "Set play queue size", 2),
+    'record_queue_size'                 : SettingType(Constants.DEFAULT_RECORD_SIZE, "Set record queue size", 2),
 
-use_keyboard                    = DEFAULT_USE_KEYBOARD
-use_mouse                       = DEFAULT_USE_MOUSE
-use_mouse_wheel                 = DEFAULT_USE_MOUSE_WHEEL
+    'use_keyboard'                      : SettingType(Constants.DEFAULT_USE_KEYBOARD, "Using keyboard input", 2),
+    'use_mouse'                         : SettingType(Constants.DEFAULT_USE_MOUSE, "Using mouse input", 2),
+    'use_mouse_wheel'                   : SettingType(Constants.DEFAULT_USE_MOUSE_WHEEL, "Using mouse wheel input", 2),
+    'use_gui'                           : SettingType(Constants.DEFAULT_USE_GUI, "Using GUI", 2),
+
+    'default_playback_delay'            : SettingType(Constants.DEFAULT_PLAYBACK_DELAY, "Set playback delay", 2),
+    'default_listen_during_playback'    : SettingType(Constants.DEFAULT_LISTEN_PLAYBACK, "Set listen for hotkey during playback", 2),
+    'default_record_delay'              : SettingType(Constants.DEFAULT_RECORD_DELAY, "Set record delay values during record", 2),
+    'default_record_mouse_movement'     : SettingType(Constants.DEFAULT_MOUSE_MOVEMENT, "Set record mouse movement during record", 2),
+    'default_record_mouse_fps'          : SettingType(Constants.DEFAULT_MOUSE_FPS, "Set record mouse fps during record", 2),
+    'default_playback_speed'            : SettingType(Constants.DEFAULT_PLAYBACK_SPEED, "Set playback speed scale", 2),
+    'default_macro_cooldown'            : SettingType(Constants.DEFAULT_MACRO_COOLDOWN, "Set default macro cooldown", 2),
+}
 
 key_map                         = {}
 mouse_map                       = {}
-
-default_listen_during_playback  = DEFAULT_LISTEN_PLAYBACK
-default_record_delay            = DEFAULT_RECORD_DELAY
-default_record_mouse_movement   = DEFAULT_MOUSE_MOVEMENT
-default_record_mouse_fps        = DEFAULT_MOUSE_FPS
-
-macro_default_cooldown          = DEFAULT_MACRO_COOLDOWN
 macro_list                      = []
 
 record_macro                    = None
 record_active                   = False
-record_queue_size               = DEFAULT_RECORD_SIZE
 record_queue                    = None
 record_last_time                = 0
 record_last_movement            = 0
 record_mouse_movement_delay     = 0
 
 play_active                     = False
-play_queue_size                 = DEFAULT_PLAY_SIZE
 play_queue                      = None
 
+macro_mutex                     = None
+run_thread                      = True
 
-def read_configuration(filename):
-    global key_delay
-    global key_timeout
-    global default_listen_during_playback
-    global default_record_delay
-    global default_record_mouse_movement
-    global default_record_mouse_fps
-    global macro_default_cooldown
-    global play_queue_size
-    global record_queue_size
-    global use_keyboard
-    global use_mouse
-    global use_mouse_wheel
-
-    try:
-        #load config file
-        print(f"Loading configuration file [{filename}]")
-
-        with open(filename, 'r') as file:
-            config_data = yaml.safe_load(file)
-
-            #global settings
-            if 'key_delay' in config_data:
-                key_delay = config_data['key_delay']
-            print(f"  Set default key delay: {key_delay}")
-            
-            if 'key_timeout' in config_data:
-                key_timeout = config_data['key_timeout']
-            print(f"  Set key timeout: {key_timeout}")
-
-            if 'default_listen_during_playback' in config_data:
-                default_listen_during_playback = config_data['default_listen_during_playback']
-            print(f"  Set listen for hotkey during playback: {default_listen_during_playback}")
-
-            if 'default_record_delay' in config_data:
-                default_record_delay = config_data['default_record_delay']
-            print(f"  Set record delay values during record: {default_record_delay}")
-
-            if 'default_record_mouse_movement' in config_data:
-                default_record_mouse_movement = config_data['default_record_mouse_movement']
-            print(f"  Set record mouse movement during record: {default_record_mouse_movement}")
-
-            if 'default_record_mouse_fps' in config_data:
-                default_record_mouse_fps = config_data['default_record_mouse_fps']
-            print(f"  Set record mouse fps during record: {default_record_mouse_fps}")
-
-            if 'macro_default_cooldown' in config_data:
-                macro_default_cooldown = config_data['macro_default_cooldown']
-            print(f"  Set default macro cooldown: {macro_default_cooldown}")
-
-            if 'play_queue_size' in config_data:
-                play_queue_size = config_data['play_queue_size']
-            print(f"  Set play queue size: {play_queue_size}")
-
-            if 'record_queue_size' in config_data:
-                record_queue_size = config_data['record_queue_size']
-            print(f"  Set record queue size: {record_queue_size}")
-
-            if 'use_keyboard' in config_data:
-                use_keyboard = config_data['use_keyboard']
-            print(f"  Using keyboard input: {use_keyboard}")
-
-            if 'use_mouse' in config_data:
-                use_mouse = config_data['use_mouse']
-            print(f"  Using mouse input: {use_mouse}")
-
-            if 'use_mouse_wheel' in config_data:
-                use_mouse_wheel = config_data['use_mouse_wheel']
-            print(f"  Using mouse wheel input: {use_mouse_wheel}")
-
-            macro_positon = 0
-            macro_string = f"macro_{macro_positon}"
-            while macro_string in config_data:
-                macro_dict = config_data[macro_string]
-
-                #check for required items
-                if 'name' not in macro_dict:
-                    print(f"  {macro_string} - does not have a name")
-                    break
-
-                if 'play_hotkey' not in macro_dict and 'record_key' not in macro_dict:
-                    print(f"  {macro_dict['name']} - must have [play_hotkey] or [record_hotkey]")
-                    break
-
-                if 'filename' not in macro_dict:
-                    print(f"  {macro_dict['name']} - does not have a filename")
-                    break
-
-                print(f"  Loading [{macro_dict['name']}] - [{macro_dict['filename']}]")
-                sequence = load_sequence(macro_dict['filename'])
-                if sequence is None:
-                    break
-
-                #optional items
-                cooldown = macro_default_cooldown
-                if 'cooldown' in macro_dict:
-                    cooldown = macro_dict['cooldown']
-                    print(f"    setting cooldown {macro_dict['cooldown']}")
-
-                listen_during_playback = default_listen_during_playback
-                if 'listen_during_playback' in macro_dict:
-                    listen_during_playback = macro_dict['listen_during_playback']
-                    print(f"    setting listen during playback {macro_dict['listen_during_playback']}")
-
-                record_delay = default_record_delay
-                if 'record_delay' in macro_dict:
-                    record_delay = macro_dict['record_delay']
-                    print(f"    setting record delay to {macro_dict['record_delay']}")
-
-                record_mouse_movement = default_record_mouse_movement
-                if 'record_mouse_movement' in macro_dict:
-                    record_mouse_movement = macro_dict['record_mouse_movement']
-                    print(f"    setting record mouse movement to {macro_dict['record_mouse_movement']}")
-
-                record_mouse_fps = default_record_mouse_fps
-                if 'record_mouse_fps' in macro_dict:
-                    record_mouse_fps = macro_dict['record_mouse_fps']
-                    print(f"    setting record mouse fps to {macro_dict['record_mouse_fps']}")
-
-                # build macro
-                macro = {
-                    'name'                      : macro_dict['name'],
-                    'filename'                  : macro_dict['filename'],
-                    'sequence'                  : sequence,
-                    'lastplay'                  : time.time(),
-                    'cooldown'                  : cooldown,
-                    'listen_during_playback'    : listen_during_playback,
-                    'record_delay'              : record_delay,
-                    'record_mouse_movement'     : record_mouse_movement,
-                    'record_mouse_fps'          : record_mouse_fps
-                }
-
-                #add hotkey lists
-                if 'play_hotkey' in macro_dict:
-                    macro['play_hotkey'] = macro_dict['play_hotkey'].split('+')
-                    print(f"    assigning play_hotkey [{macro_dict['play_hotkey']}]")
-
-                if 'record_hotkey' in macro_dict:
-                    macro['record_hotkey'] = macro_dict['record_hotkey'].split('+')
-                    print(f"    assigning record_key [{macro_dict['record_hotkey']}]")
-
-                # add macro to the list
-                macro_list.append(macro)
-
-                macro_positon += 1
-                macro_string = f"macro_{macro_positon}"
-
-        print(f"Finished reading configuration file [{filename}]")
-
-    except Exception as e:
-        print(f"Failed to load configuration file [{filename}] - {e}")
-
-
-def save_sequence(macro):
-    try:
-        # Serialize events to a list of JSON strings and save to a file
-        with open(macro['filename'], "w") as f:
-            json.dump(macro['sequence'], f, indent=4)
-
-        print(f"Recording saved to {macro['filename']}")
-
-    except Exception as e:
-        print(f"Failed to save {macro['filename']} - {e}")
-
-
-def load_sequence(filename):
-    try:
-        # Load the JSON strings from the file
-        with open(filename, "r") as f:
-            return json.load(f)
-
-    except Exception as e:
-        print(f"Failed to load {filename} - {e}")
-
-        return None
-
-
+#functions
 def on_play_key(macro):
     try:
         if time.time() - macro['lastplay'] > macro['cooldown']:
@@ -246,42 +65,50 @@ def on_play_key(macro):
 
 def on_record_key(macro):
     global record_macro
-    global record_last_time
     global record_mouse_movement_delay
+    global record_last_movement
+    global record_last_time
 
     if record_macro is None:
         record_mouse_movement_delay = 1 / macro['record_mouse_fps'] if macro['record_mouse_movement'] else 0
+        record_last_movement        = time.time() if macro['record_mouse_movement'] else 0
         record_last_time            = time.time() if macro['record_delay'] else 0
         record_macro                = macro
 
 
-def check_hotkey(hot_key_list, isWheel=False, wheelDirection=UP):
-    for key in hot_key_list:
-        if key.startswith('mouse_wheel_'):
-            key_sub = key[12:]
+def check_hotkey_list(hotkey_list, isWheel=False, wheelDirection=UP):
+    for hot_key in hotkey_list:
+        isPressed = True
+        for key in hot_key:
+            if key.startswith('mouse_wheel_'):
+                key_sub = key[12:]
 
-            if isWheel == False or wheelDirection != key_sub:
-                return False
+                if isWheel == False or wheelDirection != key_sub:
+                    isPressed = False
 
-        elif key.startswith('mouse_'):
-            key_sub = key[6:]
+            elif key.startswith('mouse_'):
+                key_sub = key[6:]
             
-            if key_sub not in mouse_map or mouse_map[key_sub]['active'] == False or time.time() - mouse_map[key_sub]['time'] > key_timeout:
-                return False
+                if key_sub not in mouse_map or mouse_map[key_sub]['active'] == False or time.time() - mouse_map[key_sub]['time'] > settings['key_timeout'].value:
+                    isPressed = False
 
-        elif key not in key_map or key_map[key]['active'] == False or time.time() - key_map[key]['time'] > key_timeout:
-            return False
+            elif key not in key_map or key_map[key]['active'] == False or time.time() - key_map[key]['time'] > settings['key_timeout'].value:
+                isPressed = False
 
-    return True
+        if isPressed == True:
+            return True
+
+    return False
 
 
 def check_macros(isWheel=False, wheelDirection=UP):
-    for macro in macro_list:
-        if 'record_hotkey' in macro and check_hotkey(macro['record_hotkey'], isWheel, wheelDirection):
-            on_record_key(macro)
+    with macro_mutex:
+        for macro in macro_list:
+            if 'record_hotkey' in macro and check_hotkey_list(macro['record_hotkey'], isWheel, wheelDirection):
+                on_record_key(macro)
 
-        elif 'play_hotkey' in macro and check_hotkey(macro['play_hotkey'], isWheel, wheelDirection):
-            on_play_key(macro)
+            elif 'play_hotkey' in macro and check_hotkey_list(macro['play_hotkey'], isWheel, wheelDirection):
+                on_play_key(macro)
         
 
 def place_in_record_queue(name, state, time):
@@ -331,7 +158,7 @@ def on_mouse_event(event):
     elif isinstance(event, mouse.MoveEvent):
         on_mouse_move(event)
 
-    elif use_mouse_wheel and isinstance(event, mouse.WheelEvent):
+    elif isinstance(event, mouse.WheelEvent):
         on_mouse_wheel(event)
 
 
@@ -352,6 +179,9 @@ def on_mouse_button(event):
 
 
 def on_mouse_wheel(event):
+    if settings['use_mouse_wheel'].value == False:
+        return
+
     button_state = UP if event.delta > 0 else DOWN
 
     if record_macro is not None:
@@ -365,119 +195,161 @@ def on_mouse_wheel(event):
 def on_mouse_move(event):
     global record_last_movement
 
-    if record_macro is not None:
-        if record_active and record_mouse_movement_delay > 0:
-            if event.time - record_last_movement > record_mouse_movement_delay:
-                place_in_record_queue(f"mouse_move", f"{event.x}:{event.y}", event.time)
-                record_last_movement = event.time
+    if record_active == True and record_macro is not None and record_mouse_movement_delay > 0:
+        if event.time - record_last_movement > record_mouse_movement_delay:
+            place_in_record_queue(f"mouse_move", f"{event.x}:{event.y}", event.time)
+            record_last_movement = event.time
+
+
+def macro_thread_task():
+    global settings
+    global key_map
+    global mouse_map
+    global macro_list
+    global record_macro
+    global record_active
+    global record_queue
+    global record_last_time
+    global record_last_movement
+    global record_mouse_movement_delay
+    global play_active
+    global play_queue
+
+    # The program continues to run, listening for the hotkey in a separate thread
+    # Wait for item in either queue
+    while run_thread:
+        with macro_mutex:
+            if record_macro is not None:
+                print(f"***Record [{record_macro['name']}]***")
+                print(f"Press 'Esc' to start recording.")
+
+                #clear record queue
+                if record_queue.qsize() > 0:
+                    record_queue.get()
+
+                #start accepting keys
+                record_active = True
+
+                #wait for esc
+                key = record_queue.get()
+                while key['name'] != 'esc' and key['state'] != DOWN:
+                    key = record_queue.get()
+
+                print(f"Press 'Esc' to stop.")
+
+                #record keys
+                sequence = []
+                key = record_queue.get()
+                last_key = None
+                while key['name'] != 'esc' or key['state'] == UP:
+                    if (last_key is not None and key != last_key) or key['name'] == 'mouse_wheel':
+                        sequence.append(key)
+
+                    last_key = key
+                    key = record_queue.get()
+
+                #stop the recording and clear information
+                record_active               = False
+                record_mouse_movement_delay = 0
+                record_last_movement        = 0
+                record_last_time            = 0
+
+                #simplify the recording string
+                sequence_string = ""
+                for key in sequence:
+                    if key['state'] == 'down':
+                        sequence_string += f"{key['name']} "
+
+                print(f"Recorded: {sequence_string}")
+
+                record_macro['sequence'] = sequence
+
+                Sequences.save_sequence(record_macro['filename'], record_macro['sequence'])
+                record_macro['lastplay'] = time.time()
+                record_macro = None
+
+            elif play_queue.qsize() > 0:
+                macro = play_queue.get()
+
+                print(f"Playing - {macro['name']}")
+                play_active = True
+                try:
+                    for key in macro['sequence']:
+                        #Find delay between keys
+                        if macro['playback_speed'] > 0:
+                            delay_time = (key['delay'] if 'delay' in key else macro['playback_delay']) / macro['playback_speed']
+
+                        else:
+                            delay_time = 0
+
+                        #Find out if this is a move, wheel, button or key event
+                        if key['name'] == ('mouse_move'):
+                            if settings['use_mouse_wheel'].value:
+                                mouse_position = key['state'].split(':')
+                                mouse.move(mouse_position[0], mouse_position[1], True, delay_time)
+                                delay_time = 0
+
+                        elif key['name'].startswith('mouse_wheel_'):
+                            if settings['use_mouse_wheel'].value:
+                                key_sub = key['name'][12:]
+
+                                if key_sub == DOWN:
+                                    mouse.wheel(-1)
+
+                                elif key_sub == UP:
+                                    mouse.wheel(1)
+
+                        elif key['name'].startswith('mouse_'):
+                            if settings['use_mouse'].value:
+                                key_sub = key['name'][6:]
+
+                                if key['state'] == DOWN:
+                                    mouse.press(key_sub)
+
+                                else:
+                                    mouse.release(key_sub)
+
+                        elif settings['use_keyboard'].value:
+                            keyboard.send(key['name'], key['state'] == DOWN, key['state'] == UP)
+
+                        #Wait for the next key event
+                        time.sleep(delay_time)
+
+                except Exception as e:
+                    print(f"Failed - {e}")
+
+                play_active = False
+
+        time.sleep(settings['default_playback_delay'].value)
 
 
 ### Begin ###
 
-print(f"Starting keyboard_macro {APP_VERSION}")
+print(f"Starting keyboard_macro {Constants.APP_VERSION}")
 
-read_configuration(CONFIG_FILENAME)
+ConfigFile.read_configuration(Constants.CONFIG_FILENAME, settings, macro_list)
 
-record_queue = queue.Queue(maxsize = record_queue_size)
-play_queue = queue.Queue(maxsize = play_queue_size)
+macro_mutex = threading.Lock()
+record_queue = queue.Queue(maxsize = settings['record_queue_size'].value)
+play_queue = queue.Queue(maxsize = settings['play_queue_size'].value)
 
-if use_keyboard:
+if settings['use_keyboard'].value:
     keyboard.hook(lambda e: on_key_event(e))
 
-if use_mouse:
-    ctypes.windll.shcore.SetProcessDpiAwareness(1)
+if settings['use_mouse'].value:
     mouse.hook(on_mouse_event)
 
-# The program continues to run, listening for the hotkey in a separate thread
-# Wait for item in either queue
-while True:
-    if record_macro is not None:
-        print(f"***Record [{record_macro['name']}]***")
-        print(f"Press 'Esc' to start recording.")
+# Start the macro handling thread
+macro_thread = threading.Thread(target=macro_thread_task, args=())
+macro_thread.start()
 
-        #clear record queue
-        if record_queue.qsize() > 0:
-            record_queue.get()
+if settings['use_gui'].value:
+    # Start application
+    app = QApplication(sys.argv)
+    w = MainWindow(f"keyboard_macro {Constants.APP_VERSION}", macro_list, macro_mutex)
+    app.exec()
+    run_thread = False
 
-        #start accepting keys
-        record_active = True
-
-        #wait for esc
-        key = record_queue.get()
-        while key['name'] != 'esc' and key['state'] != DOWN:
-            key = record_queue.get()
-
-        print(f"Press 'Esc' to stop.")
-
-        #record keys
-        sequence = []
-        key = record_queue.get()
-        last_key = None
-        while key['name'] != 'esc' or key['state'] == UP:
-            if (last_key is not None and key != last_key) or key['name'] == 'mouse_wheel':
-                sequence.append(key)
-
-            last_key = key
-            key = record_queue.get()
-
-        record_active = False
-        record_macro['sequence'] = sequence
-
-        #simplify the recording string
-        sequence_string = ""
-        for key in sequence:
-            if key['state'] == 'down':
-                sequence_string += f"{key['name']} "
-
-        print(f"Recorded: {sequence_string}")
-
-        save_sequence(record_macro)
-        record_macro['lastplay'] = time.time() + record_macro['cooldown']
-        record_macro = None
-
-    elif play_queue.qsize() > 0:
-        macro = play_queue.get()
-
-        print(f"Playing - {macro['name']}")
-        play_active = True
-        try:
-            for key in macro['sequence']:
-                delay_time = key['delay'] if 'delay' in key else key_delay
-
-                if key['name'] == ('mouse_move'):
-                    if use_mouse_wheel:
-                        mouse_position = key['state'].split(':')
-                        mouse.move(mouse_position[0], mouse_position[1], True, delay_time)
-                        delay_time = 0
-
-                elif key['name'].startswith('mouse_wheel_'):
-                    if use_mouse_wheel:
-                        key_sub = key['name'][12:]
-
-                        if key_sub == DOWN:
-                            mouse.wheel(-1)
-
-                        elif key_sub == UP:
-                            mouse.wheel(1)
-
-                elif key['name'].startswith('mouse_'):
-                    if use_mouse:
-                        key_sub = key['name'][6:]
-
-                        if key['state'] == DOWN:
-                            mouse.press(key_sub)
-
-                        else:
-                            mouse.release(key_sub)
-
-                elif use_keyboard:
-                    keyboard.send(key['name'], key['state'] == DOWN, key['state'] == UP)
-
-                time.sleep(delay_time)
-
-        except Exception as e:
-            print(f"Failed - {e}")
-
-        play_active = False
-
-    time.sleep(key_delay)
+else:
+    ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    macro_thread.join()

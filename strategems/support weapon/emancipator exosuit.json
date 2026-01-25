@@ -1,0 +1,66 @@
+[
+    {
+        "name": "ctrl",
+        "state": "down"
+    },
+    {
+        "name": "left",
+        "state": "down"
+    },
+    {
+        "name": "left",
+        "state": "up"
+    },
+    {
+        "name": "down",
+        "state": "down"
+    },
+    {
+        "name": "down",
+        "state": "up"
+    },
+    {
+        "name": "right",
+        "state": "down"
+    },
+    {
+        "name": "right",
+        "state": "up"
+    },
+    {
+        "name": "up",
+        "state": "down"
+    },
+    {
+        "name": "up",
+        "state": "up"
+    },
+    {
+        "name": "left",
+        "state": "down"
+    },
+    {
+        "name": "left",
+        "state": "up"
+    },
+    {
+        "name": "down",
+        "state": "down"
+    },
+    {
+        "name": "down",
+        "state": "up"
+    },
+    {
+        "name": "up",
+        "state": "down"
+    },
+    {
+        "name": "up",
+        "state": "up"
+    },
+    {
+        "name": "ctrl",
+        "state": "up"
+    }
+]

@@ -1,0 +1,42 @@
+[
+    {
+        "name": "ctrl",
+        "state": "down"
+    },
+    {
+        "name": "right",
+        "state": "down"
+    },
+    {
+        "name": "right",
+        "state": "up"
+    },
+    {
+        "name": "up",
+        "state": "down"
+    },
+    {
+        "name": "up",
+        "state": "up"
+    },
+    {
+        "name": "up",
+        "state": "down"
+    },
+    {
+        "name": "up",
+        "state": "up"
+    },
+    {
+        "name": "down",
+        "state": "down"
+    },
+    {
+        "name": "down",
+        "state": "up"
+    },
+    {
+        "name": "ctrl",
+        "state": "up"
+    }
+]
