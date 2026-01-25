@@ -12,71 +12,41 @@ default_record_mouse_movement: false
 default_record_mouse_fps: 30
 default_playback_speed: 1.0
 default_macro_cooldown: 1.0
-
 macro_0:
   name: Record
+  filename: strategems/record.json
   play_hotkey: f2
   record_hotkey: alt+ctrl+f2
-  filename: strategems/record.json
-  playback_delay: 0.05
   listen_during_playback: false
   record_delay: true
   record_mouse_movement: true
   record_mouse_fps: 10
-  playback_speed: 1.0
   cooldown: 2.0
-
 macro_1:
   name: Reinforcement
-  play_hotkey: f1|alt+mouse_wheel_down
   filename: strategems/basic/reinforce.json
-
+  play_hotkey: f1|alt+mouse_wheel_down
 macro_2:
   name: Resupply
-  play_hotkey: f6|alt+mouse_wheel_up
   filename: strategems/basic/resupply.json
-
+  play_hotkey: f6|alt+mouse_wheel_up
 macro_3:
   name: Laser Canon
-  play_hotkey: f7
   filename: strategems/support weapon/laser cannon.json
-
+  play_hotkey: f7
 macro_4:
   name: Watchdog Rover
-  play_hotkey: f8
   filename: strategems/support weapon/watchdog rover.json
-
-macro_*:
-  name: Emancipator Exosuit
-  play_hotkey: f9|mouse_x
-  filename: strategems/support weapon/emancipator exosuit.json
-
-macro_6:
-  name: Eagle Napalm Airstrike
-  play_hotkey: f10|mouse_x2
-  filename: strategems/eagle/eagle napalm airstrike.json
-
-macro_7:
-  name: SEAF Artillery
-  play_hotkey: f11
-  filename: strategems/basic/seaf artillery.json
-
-macro_*:
-  name: Eagle Airstrike
-  play_hotkey: f10|mouse_x2
-  filename: strategems/eagle/eagle airstrike.json
-
-macro_*:
-  name: Eagle Cluster Bomb
-  play_hotkey: f10|mouse_x2
-  filename: strategems/eagle/eagle cluster bomb.json
-
+  play_hotkey: f8
 macro_5:
   name: Rocket Sentry
-  play_hotkey: f9|mouse_x
   filename: strategems/sentry/rocket sentry.json
-
-macro_*:
-  name: Machine Gun Sentry
   play_hotkey: f9|mouse_x
-  filename: strategems/sentry/Machine Gun Sentry.json
+macro_6:
+  name: Eagle Napalm Airstrike
+  filename: strategems/eagle/eagle napalm airstrike.json
+  play_hotkey: f10|mouse_x2
+macro_7:
+  name: SEAF Artillery
+  filename: strategems/basic/seaf artillery.json
+  play_hotkey: f11

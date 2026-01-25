@@ -78,7 +78,7 @@ def on_record_key(macro):
 
 def check_hotkey_list(hotkey_list, isWheel=False, wheelDirection=UP):
     for hot_key in hotkey_list:
-        isPressed = True
+        isPressed = True if len(hot_key) > 0 else False
         for key in hot_key:
             if key.startswith('mouse_wheel_'):
                 key_sub = key[12:]
@@ -346,7 +346,7 @@ macro_thread.start()
 if settings['use_gui'].value:
     # Start application
     app = QApplication(sys.argv)
-    w = MainWindow(f"keyboard_macro {Constants.APP_VERSION}", macro_list, macro_mutex)
+    w = MainWindow(f"keyboard_macro {Constants.APP_VERSION}", settings, macro_list, macro_mutex)
     app.exec()
     run_thread = False
 

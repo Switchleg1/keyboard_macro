@@ -5,8 +5,8 @@ import lib.HotKeys as HotKeys
 from lib.SettingType import SettingType
 
 macro_options = {
-    'playback_delay'            : SettingType('default_playback_delay', 'setting playback delay to', indent=4),
     'listen_during_playback'    : SettingType('default_listen_during_playback', 'setting listen during playback', indent=4),
+    'playback_delay'            : SettingType('default_playback_delay', 'setting playback delay to', indent=4),
     'record_delay'              : SettingType('default_record_delay', 'setting record delay to', indent=4),
     'record_mouse_movement'     : SettingType('default_record_mouse_movement', 'setting record mouse movement to', indent=4),
     'record_mouse_fps'          : SettingType('default_record_mouse_fps', 'setting record mouse fps to', indent=4),
@@ -32,6 +32,11 @@ def read_configuration(filename, settings, macro_list):
 
                 settings[setting].print()
 
+
+            #clear and load macros
+            while len(macro_list):
+                del macro_list[0]
+
             macro_positon = 0
             macro_string = f"macro_{macro_positon}"
             while macro_string in config_data:
@@ -52,8 +57,6 @@ def read_configuration(filename, settings, macro_list):
 
                 print(f"  Loading [{macro_dict['name']}] - [{macro_dict['filename']}]")
                 sequence = Sequences.load_sequence(macro_dict['filename'])
-                if sequence is None:
-                    break
 
                 # build macro
                 macro = {
@@ -93,3 +96,40 @@ def read_configuration(filename, settings, macro_list):
 
     except Exception as e:
         print(f"Failed to load configuration file [{filename}] - {e}")
+
+
+def save_configuration(filename, settings, macro_list):
+
+    try:
+        #save config file
+        print(f"Saving configuration file [{filename}]")
+
+        config_data = {}
+        for setting in settings:
+            config_data[setting] = settings[setting].value
+
+        macro_positon = 0
+        for macro in macro_list:
+            macro_string = f"macro_{macro_positon}"
+            config_data[macro_string] = {}
+            config_macro = config_data[macro_string]
+
+            config_macro['name']        = macro['name']
+            config_macro['filename']    = macro['filename']
+            if 'play_hotkey' in macro:
+                config_macro['play_hotkey'] = HotKeys.list_to_string(macro['play_hotkey'])
+            if 'record_hotkey' in macro:
+                config_macro['record_hotkey'] = HotKeys.list_to_string(macro['record_hotkey'])
+
+            #set options
+            for option_key, option_value in macro_options.items():
+                if macro[option_key] != settings[option_value.value].value:
+                    config_macro[option_key] = macro[option_key]
+
+            macro_positon += 1
+
+        with open(filename, 'w') as file:
+            config_data = yaml.dump(config_data, file, sort_keys=False, default_flow_style=False)
+
+    except Exception as e:
+        print(f"Failed to save configuration file [{filename}] - {e}")
