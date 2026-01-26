@@ -1,6 +1,6 @@
 from enum import Enum
 
-APP_VERSION                     = "v0.99"
+APP_VERSION                     = "v1.0"
 CONFIG_FILENAME                 = "config.yaml"
 DEFAULT_PLAYBACK_DELAY          = 0.05
 DEFAULT_PLAY_SIZE               = 3
@@ -16,6 +16,7 @@ DEFAULT_MOUSE_MOVEMENT          = False
 DEFAULT_MOUSE_FPS               = 30
 DEFAULT_PLAYBACK_SPEED          = 1.0
 DEFAULT_USE_GUI                 = True
+DEFAULT_START_MINIMIZE          = False
 
 
 class ListAction(Enum):

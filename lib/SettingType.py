@@ -1,3 +1,6 @@
+import lib.Log as Log
+
+
 class SettingType():
     def __init__(self, default_value, print_string, indent=0):
         super().__init__()
@@ -8,8 +11,8 @@ class SettingType():
 
 
     def print(self):
-        print(" " * self.indent + f"{self.print_string}: {self.value}")
+        Log.i(" " * self.indent + f"{self.print_string}: {self.value}")
 
 
     def print_value(self, value):
-        print(" " * self.indent + f"{self.print_string}: {value}")
+        Log.i(" " * self.indent + f"{self.print_string}: {value}")

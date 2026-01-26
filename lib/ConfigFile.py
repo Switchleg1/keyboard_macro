@@ -2,7 +2,9 @@ import time
 import yaml
 import lib.Sequences as Sequences
 import lib.HotKeys as HotKeys
+import lib.Log as Log
 from lib.SettingType import SettingType
+
 
 macro_options = {
     'listen_during_playback'    : SettingType('default_listen_during_playback', 'setting listen during playback', indent=4),
@@ -20,7 +22,7 @@ def read_configuration(filename, settings, macro_list):
 
     try:
         #load config file
-        print(f"Loading configuration file [{filename}]")
+        Log.i(f"Loading configuration file [{filename}]")
 
         with open(filename, 'r') as file:
             config_data = yaml.safe_load(file)
@@ -44,18 +46,18 @@ def read_configuration(filename, settings, macro_list):
 
                 #check for required items
                 if 'name' not in macro_dict:
-                    print(f"  {macro_string} - does not have a name")
+                    Log.i(f"  {macro_string} - does not have a name")
                     break
 
                 if 'play_hotkey' not in macro_dict and 'record_key' not in macro_dict:
-                    print(f"  {macro_dict['name']} - must have [play_hotkey] or [record_hotkey]")
+                    Log.i(f"  {macro_dict['name']} - must have [play_hotkey] or [record_hotkey]")
                     break
 
                 if 'filename' not in macro_dict:
-                    print(f"  {macro_dict['name']} - does not have a filename")
+                    Log.i(f"  {macro_dict['name']} - does not have a filename")
                     break
 
-                print(f"  Loading [{macro_dict['name']}] - [{macro_dict['filename']}]")
+                Log.i(f"  Loading [{macro_dict['name']}] - [{macro_dict['filename']}]")
                 sequence = Sequences.load_sequence(macro_dict['filename'])
 
                 # build macro
@@ -69,11 +71,11 @@ def read_configuration(filename, settings, macro_list):
                 #add hotkey lists
                 if 'play_hotkey' in macro_dict:
                     macro['play_hotkey'] = HotKeys.string_to_list(macro_dict['play_hotkey'])
-                    print(f"    assigning play_hotkey [{macro_dict['play_hotkey']}]")
+                    Log.i(f"    assigning play_hotkey [{macro_dict['play_hotkey']}]")
 
                 if 'record_hotkey' in macro_dict:
                     macro['record_hotkey'] = HotKeys.string_to_list(macro_dict['record_hotkey'])
-                    print(f"    assigning record_key [{macro_dict['record_hotkey']}]")
+                    Log.i(f"    assigning record_key [{macro_dict['record_hotkey']}]")
 
                 #add optional items
                 for option_key, option_value in macro_options.items():
@@ -92,17 +94,17 @@ def read_configuration(filename, settings, macro_list):
                 macro_positon += 1
                 macro_string = f"macro_{macro_positon}"
 
-        print(f"Finished reading configuration file [{filename}]")
+        Log.i(f"Finished reading configuration file [{filename}]")
 
     except Exception as e:
-        print(f"Failed to load configuration file [{filename}] - {e}")
+        Log.e(f"Failed to load configuration file [{filename}] - {e}")
 
 
 def save_configuration(filename, settings, macro_list):
 
     try:
         #save config file
-        print(f"Saving configuration file [{filename}]")
+        Log.i(f"Saving configuration file [{filename}]")
 
         config_data = {}
         for setting in settings:
@@ -132,4 +134,4 @@ def save_configuration(filename, settings, macro_list):
             config_data = yaml.dump(config_data, file, sort_keys=False, default_flow_style=False)
 
     except Exception as e:
-        print(f"Failed to save configuration file [{filename}] - {e}")
+        Log.e(f"Failed to save configuration file [{filename}] - {e}")

@@ -1,4 +1,6 @@
 import json
+import lib.Log as Log
+
 
 def save_sequence(filename, sequence):
     try:
@@ -6,10 +8,10 @@ def save_sequence(filename, sequence):
         with open(filename, "w") as f:
             json.dump(sequence, f, indent=4)
 
-        print(f"Recording saved to {filename}")
+        Log.i(f"Recording saved to {filename}")
 
     except Exception as e:
-        print(f"Failed to save {filename} - {e}")
+        Log.e(f"Failed to save {filename} - {e}")
 
 
 def load_sequence(filename):
@@ -19,6 +21,6 @@ def load_sequence(filename):
             return json.load(f)
 
     except Exception as e:
-        print(f"Failed to load {filename} - {e}")
+        Log.e(f"Failed to load {filename} - {e}")
 
         return None

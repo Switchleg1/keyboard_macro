@@ -1,10 +1,12 @@
 import time
-from xmlrpc.client import boolean
 import lib.Constants as Constants
 import lib.HotKeys as HotKeys
 import lib.Sequences as Sequences
 import lib.ConfigFile as ConfigFile
-from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QAbstractItemView, QFileDialog, QPushButton
+import lib.Log as Log
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QAbstractItemView, QFileDialog, QPushButton, QListWidget, QListWidgetItem
+from PyQt6.QtCore import QSize
+from PyQt6.QtGui import QFontMetrics, QFont
 
 
 class MainWindow(QMainWindow):
@@ -73,16 +75,29 @@ class MainWindow(QMainWindow):
 
         self.mainLayoutBox.addLayout(self.macroButtonLayout)
 
+        #log box
+        self.listViewLog = QListWidget()
+        self.listViewLog.setFixedHeight(150)
+
+        self.mainLayoutBox.addWidget(self.listViewLog)
+
+        font = self.listViewLog.font()
+        font_metrics = QFontMetrics(font)
+        self.text_height = font_metrics.boundingRect("X").height() + 1
+
+        Log.set_output(self._writeLog)
+        Log.dump_buffer()
+
         widget = QWidget()
         widget.setLayout(self.mainLayoutBox)
-        self.setGeometry(300, 300, 975, 500)
+        self.setGeometry(300, 300, 975, 600)
         self.setCentralWidget(widget)
         self.show()
 
 
     def SaveButtonClick(self):
         with self.macro_mutex:
-            ConfigFile.save_configuration(Constants.CONFIG_FILENAME+"1", self.settings, self.macro_list)
+            ConfigFile.save_configuration(Constants.CONFIG_FILENAME, self.settings, self.macro_list)
 
 
     def ReloadButtonClick(self):
@@ -117,7 +132,7 @@ class MainWindow(QMainWindow):
                 self._loadMacroInfo(new_index)
 
         except Exception as e:
-            print(f"Error addMacroEntry - {e}")
+            Log.e(f"Error addMacroEntry - {e}")
 
         self.macroTable.cellChanged.connect(self.onMacroCellChanged)
 
@@ -141,7 +156,7 @@ class MainWindow(QMainWindow):
                     del self.macro_list[row]
 
         except Exception as e:
-            print(f"Error addMacroEntry - {e}")
+            Log.e(f"Error addMacroEntry - {e}")
 
         self.macroTable.cellChanged.connect(self.onMacroCellChanged)
 
@@ -153,7 +168,7 @@ class MainWindow(QMainWindow):
                 self._loadMacroInfo(row)
 
         except Exception as e:
-            print(f"Error loadMacroInfo - {e}")
+            Log.e(f"Error loadMacroInfo - {e}")
 
         self.macroTable.cellChanged.connect(self.onMacroCellChanged)
 
@@ -170,13 +185,13 @@ class MainWindow(QMainWindow):
                 if action_type == Constants.ListAction.LOAD_SEQUENCE_DIALOG:
                     filename = QFileDialog.getOpenFileName(self, "Open Sequence", "", "Json (*.json)")
 
-                    print(f"Setting [{macro['name']}] - {column_value['macro_key']} to {filename[0]}")
+                    Log.i(f"Setting [{macro['name']}] - {column_value['macro_key']} to {filename[0]}")
 
                     macro[column_value['macro_key']] = filename[0]
                     macro['sequence'] = Sequences.load_sequence(filename[0])
 
         except Exception as e:
-            print(f"Error onMacroDoubleClicked - {e}")
+            Log.e(f"Error onMacroDoubleClicked - {e}")
 
         self.loadMacroInfo(item.row())
 
@@ -201,7 +216,7 @@ class MainWindow(QMainWindow):
 
             with self.macro_mutex:
                 macro = self.macro_list[row]
-                print(f"Setting [{macro['name']}] - {column_value['macro_key']} to {column_str}")
+                Log.i(f"Setting [{macro['name']}] - {column_value['macro_key']} to {column_str}")
                 if action_type == Constants.ListAction.NONE:
                     macro[column_value['macro_key']] = column_str
 
@@ -220,7 +235,7 @@ class MainWindow(QMainWindow):
                     macro['sequence'] = Sequences.load_sequence(column_str)
 
         except Exception as e:
-            print(f"Error onMacroCellChanged - {e}")
+            Log.e(f"Error onMacroCellChanged - {e}")
 
         self.loadMacroInfo(row)
 
@@ -261,6 +276,15 @@ class MainWindow(QMainWindow):
                     self._loadMacroInfo(i)
 
         except Exception as e:
-            print(f"Error _loadMacroEntries - {e}")
+            Log.e(f"Error _loadMacroEntries - {e}")
 
         self.macroTable.cellChanged.connect(self.onMacroCellChanged)
+
+
+    def _writeLog(self, out):
+        item = QListWidgetItem()
+        item.setText(out)
+        item.setSizeHint(QSize(10000, self.text_height))
+
+        self.listViewLog.addItem(item)
+        self.listViewLog.scrollToBottom()

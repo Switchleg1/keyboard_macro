@@ -8,6 +8,8 @@ import threading
 import lib.Constants as Constants
 import lib.ConfigFile as ConfigFile
 import lib.Sequences as Sequences
+import lib.Log as Log
+import lib.Helpers as Helpers
 from PyQt6.QtWidgets import QApplication
 from keyboard._keyboard_event import KEY_DOWN, KEY_UP
 from mouse._mouse_event import MoveEvent, ButtonEvent, WheelEvent, LEFT, RIGHT, MIDDLE, X, X2, UP, DOWN, DOUBLE
@@ -15,6 +17,7 @@ from lib.UI.MainWindow import MainWindow
 from lib.SettingType import SettingType
 
 settings = {
+    'start_minimized'                   : SettingType(Constants.DEFAULT_START_MINIMIZE, "Start minimized", 2),
     'key_timeout'                       : SettingType(Constants.DEFAULT_KEY_TIMEOUT, "Set key timeout", 2),
 
     'play_queue_size'                   : SettingType(Constants.DEFAULT_PLAY_SIZE, "Set play queue size", 2),
@@ -51,6 +54,8 @@ play_queue                      = None
 macro_mutex                     = None
 run_thread                      = True
 
+main_window                     = None
+
 #functions
 def on_play_key(macro):
     try:
@@ -60,7 +65,7 @@ def on_play_key(macro):
                 play_queue.put_nowait(macro)
 
     except:
-        print(f"Play queue is full - {macro['name']}")
+        Log.w(f"Play queue is full - {macro['name']}")
 
 
 def on_record_key(macro):
@@ -132,7 +137,7 @@ def place_in_record_queue(name, state, time):
         record_queue.put_nowait(key)
 
     except:
-        print(f"Record queue is full - [{name}]")
+        Log.w(f"Record queue is full - [{name}]")
 
 
 def on_key_event(event):
@@ -220,8 +225,8 @@ def macro_thread_task():
     while run_thread:
         with macro_mutex:
             if record_macro is not None:
-                print(f"***Record [{record_macro['name']}]***")
-                print(f"Press 'Esc' to start recording.")
+                Log.i(f"***Record [{record_macro['name']}]***")
+                Log.i(f"Press 'Esc' to start recording.")
 
                 #clear record queue
                 if record_queue.qsize() > 0:
@@ -235,7 +240,7 @@ def macro_thread_task():
                 while key['name'] != 'esc' and key['state'] != DOWN:
                     key = record_queue.get()
 
-                print(f"Press 'Esc' to stop.")
+                Log.i(f"Press 'Esc' to stop.")
 
                 #record keys
                 sequence = []
@@ -260,7 +265,7 @@ def macro_thread_task():
                     if key['state'] == 'down':
                         sequence_string += f"{key['name']} "
 
-                print(f"Recorded: {sequence_string}")
+                Log.i(f"Recorded: {sequence_string}")
 
                 record_macro['sequence'] = sequence
 
@@ -271,7 +276,7 @@ def macro_thread_task():
             elif play_queue.qsize() > 0:
                 macro = play_queue.get()
 
-                print(f"Playing - {macro['name']}")
+                Log.i(f"Playing - {macro['name']}")
                 play_active = True
                 try:
                     for key in macro['sequence']:
@@ -316,40 +321,52 @@ def macro_thread_task():
                         time.sleep(delay_time)
 
                 except Exception as e:
-                    print(f"Failed - {e}")
+                    Log.i(f"Failed - {e}")
 
                 play_active = False
 
         time.sleep(settings['default_playback_delay'].value)
 
 
-### Begin ###
+### Main ###
+if __name__ == "__main__":
+    Log.i(f"Starting keyboard_macro {Constants.APP_VERSION}")
 
-print(f"Starting keyboard_macro {Constants.APP_VERSION}")
+    ConfigFile.read_configuration(Constants.CONFIG_FILENAME, settings, macro_list)
 
-ConfigFile.read_configuration(Constants.CONFIG_FILENAME, settings, macro_list)
+    record_queue = queue.Queue(maxsize = settings['record_queue_size'].value)
+    play_queue = queue.Queue(maxsize = settings['play_queue_size'].value)
+    macro_mutex = threading.Lock()
 
-macro_mutex = threading.Lock()
-record_queue = queue.Queue(maxsize = settings['record_queue_size'].value)
-play_queue = queue.Queue(maxsize = settings['play_queue_size'].value)
+    if settings['use_keyboard'].value:
+        keyboard.hook(lambda e: on_key_event(e))
 
-if settings['use_keyboard'].value:
-    keyboard.hook(lambda e: on_key_event(e))
+    if settings['use_mouse'].value:
+        mouse.hook(on_mouse_event)
 
-if settings['use_mouse'].value:
-    mouse.hook(on_mouse_event)
+    # Start the macro handling thread
+    macro_thread = threading.Thread(target=macro_thread_task, args=())
+    macro_thread.start()
 
-# Start the macro handling thread
-macro_thread = threading.Thread(target=macro_thread_task, args=())
-macro_thread.start()
-
-if settings['use_gui'].value:
     # Start application
-    app = QApplication(sys.argv)
-    w = MainWindow(f"keyboard_macro {Constants.APP_VERSION}", settings, macro_list, macro_mutex)
-    app.exec()
-    run_thread = False
+    if settings['use_gui'].value:
+        Helpers.minimize_console()
 
-else:
-    ctypes.windll.shcore.SetProcessDpiAwareness(1)
-    macro_thread.join()
+        app = QApplication(sys.argv)
+        main_window = MainWindow(f"keyboard_macro {Constants.APP_VERSION}", settings, macro_list, macro_mutex)
+
+        if settings['start_minimized'].value:
+            main_window.showMinimized()
+
+        app.exec()
+        run_thread = False
+
+    else:
+        if settings['start_minimized'].value:
+            Helpers.minimize_console()
+
+        Log.set_output(print)
+        Log.dump_buffer()
+
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+        macro_thread.join()

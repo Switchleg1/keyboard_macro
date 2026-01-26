@@ -1,3 +1,4 @@
+start_minimized: false
 key_timeout: 3
 play_queue_size: 3
 record_queue_size: 3
@@ -31,19 +32,19 @@ macro_2:
   filename: strategems/basic/resupply.json
   play_hotkey: f6|alt+mouse_wheel_up
 macro_3:
-  name: Laser Canon
+  name: Support Weapon
   filename: strategems/support weapon/laser cannon.json
   play_hotkey: f7
 macro_4:
-  name: Watchdog Rover
+  name: Backpack
   filename: strategems/support weapon/watchdog rover.json
   play_hotkey: f8
 macro_5:
-  name: Rocket Sentry
+  name: Sentry
   filename: strategems/sentry/rocket sentry.json
   play_hotkey: f9|mouse_x
 macro_6:
-  name: Eagle Napalm Airstrike
+  name: Airstrike
   filename: strategems/eagle/eagle napalm airstrike.json
   play_hotkey: f10|mouse_x2
 macro_7:
