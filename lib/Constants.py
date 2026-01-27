@@ -1,6 +1,6 @@
 from enum import Enum
 
-APP_VERSION                     = "v1.0"
+APP_VERSION                     = "v1.1"
 CONFIG_FILENAME                 = "config.yaml"
 DEFAULT_PLAYBACK_DELAY          = 0.05
 DEFAULT_PLAY_SIZE               = 3

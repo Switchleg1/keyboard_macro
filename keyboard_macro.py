@@ -5,17 +5,21 @@ import mouse
 import ctypes
 import sys
 import threading
+import copy
 import lib.Constants as Constants
 import lib.ConfigFile as ConfigFile
 import lib.Sequences as Sequences
 import lib.Log as Log
 import lib.Helpers as Helpers
+import lib.HotKeys as HotKeys
 from PyQt6.QtWidgets import QApplication
 from keyboard._keyboard_event import KEY_DOWN, KEY_UP
 from mouse._mouse_event import MoveEvent, ButtonEvent, WheelEvent, LEFT, RIGHT, MIDDLE, X, X2, UP, DOWN, DOUBLE
 from lib.UI.MainWindow import MainWindow
 from lib.SettingType import SettingType
 
+
+#globals
 settings = {
     'start_minimized'                   : SettingType(Constants.DEFAULT_START_MINIMIZE, "Start minimized", 2),
     'key_timeout'                       : SettingType(Constants.DEFAULT_KEY_TIMEOUT, "Set key timeout", 2),
@@ -56,18 +60,24 @@ run_thread                      = True
 
 main_window                     = None
 
-#functions
+
+"""
+on_play_key: places play macro into the play queue for main thread
+"""
 def on_play_key(macro):
     try:
         if time.time() - macro['lastplay'] > macro['cooldown']:
             if play_active == False or macro['listen_during_playback']:
                 macro['lastplay'] = time.time()
-                play_queue.put_nowait(macro)
+                play_queue.put_nowait(copy.deepcopy(macro))
 
     except:
         Log.w(f"Play queue is full - {macro['name']}")
 
 
+"""
+on_record_key: set record macro and sets flag for main thread to start recording
+"""
 def on_record_key(macro):
     global record_macro
     global record_mouse_movement_delay
@@ -78,9 +88,12 @@ def on_record_key(macro):
         record_mouse_movement_delay = 1 / macro['record_mouse_fps'] if macro['record_mouse_movement'] else 0
         record_last_movement        = time.time() if macro['record_mouse_movement'] else 0
         record_last_time            = time.time() if macro['record_delay'] else 0
-        record_macro                = macro
+        record_macro                = copy.deepcopy(macro)
 
 
+"""
+check_hotkey_list: check all hotkeys for supplied hotkey list to see if any match the current key states
+"""
 def check_hotkey_list(hotkey_list, isWheel=False, wheelDirection=UP):
     for hot_key in hotkey_list:
         isPressed = True if len(hot_key) > 0 else False
@@ -106,6 +119,9 @@ def check_hotkey_list(hotkey_list, isWheel=False, wheelDirection=UP):
     return False
 
 
+"""
+check_macros: check all macros (play and record lists) against the current key states
+"""
 def check_macros(isWheel=False, wheelDirection=UP):
     with macro_mutex:
         for macro in macro_list:
@@ -116,6 +132,9 @@ def check_macros(isWheel=False, wheelDirection=UP):
                 on_play_key(macro)
         
 
+"""
+place_in_record_queue: used to send key presses to the main thread during record state
+"""
 def place_in_record_queue(name, state, time):
     global record_last_time
 
@@ -140,6 +159,9 @@ def place_in_record_queue(name, state, time):
         Log.w(f"Record queue is full - [{name}]")
 
 
+"""
+on_key_event: main keyboard event handler
+"""
 def on_key_event(event):
     isPressed = event.event_type == KEY_DOWN
 
@@ -156,6 +178,9 @@ def on_key_event(event):
         check_macros()
 
 
+"""
+on_mouse_event: main mouse event handler
+"""
 def on_mouse_event(event):
     if isinstance(event, mouse.ButtonEvent):
         on_mouse_button(event)
@@ -167,6 +192,9 @@ def on_mouse_event(event):
         on_mouse_wheel(event)
 
 
+"""
+on_mouse_button: sub mouse event handler used for button presses
+"""
 def on_mouse_button(event):
     isPressed = event.event_type != UP
 
@@ -183,6 +211,9 @@ def on_mouse_button(event):
         check_macros()
 
 
+"""
+on_mouse_wheel: sub mouse event handler used for wheel moves
+"""
 def on_mouse_wheel(event):
     if settings['use_mouse_wheel'].value == False:
         return
@@ -197,6 +228,9 @@ def on_mouse_wheel(event):
         check_macros(isWheel=True, wheelDirection=button_state)
 
 
+"""
+on_mouse_move: sub mouse event handler used for mouse moves
+"""
 def on_mouse_move(event):
     global record_last_movement
 
@@ -206,6 +240,9 @@ def on_mouse_move(event):
             record_last_movement = event.time
 
 
+"""
+macro_thread_task: main thread task which handles playing/recording sequences
+"""
 def macro_thread_task():
     global settings
     global key_map
@@ -220,115 +257,129 @@ def macro_thread_task():
     global play_active
     global play_queue
 
-    # The program continues to run, listening for the hotkey in a separate thread
-    # Wait for item in either queue
     while run_thread:
-        with macro_mutex:
-            if record_macro is not None:
-                Log.i(f"***Record [{record_macro['name']}]***")
-                Log.i(f"Press 'Esc' to start recording.")
+        if record_macro is not None:
+            Log.i(f"***Record [{record_macro['name']}]***")
+            Log.i(f"Press 'Esc' to start recording.")
 
-                #clear record queue
-                if record_queue.qsize() > 0:
-                    record_queue.get()
+            #clear record queue
+            if record_queue.qsize() > 0:
+                record_queue.get()
 
-                #start accepting keys
-                record_active = True
+            #start accepting keys
+            record_active = True
 
-                #wait for esc
+            #wait for esc
+            key = record_queue.get()
+            while key['name'] != 'esc' and key['state'] != DOWN:
                 key = record_queue.get()
-                while key['name'] != 'esc' and key['state'] != DOWN:
-                    key = record_queue.get()
 
-                Log.i(f"Press 'Esc' to stop.")
+            Log.i(f"Press 'Esc' to stop.")
 
-                #record keys
-                sequence = []
+            #record keys
+            sequence = []
+            key = record_queue.get()
+            last_key = None
+            while key['name'] != 'esc' or key['state'] == UP:
+                if (last_key is not None and key != last_key) or key['name'] == 'mouse_wheel':
+                    sequence.append(key)
+
+                last_key = key
                 key = record_queue.get()
-                last_key = None
-                while key['name'] != 'esc' or key['state'] == UP:
-                    if (last_key is not None and key != last_key) or key['name'] == 'mouse_wheel':
-                        sequence.append(key)
 
-                    last_key = key
-                    key = record_queue.get()
+            #stop the recording and clear information
+            record_active               = False
+            record_mouse_movement_delay = 0
+            record_last_movement        = 0
+            record_last_time            = 0
 
-                #stop the recording and clear information
-                record_active               = False
-                record_mouse_movement_delay = 0
-                record_last_movement        = 0
-                record_last_time            = 0
+            #simplify the recording string
+            sequence_string = ""
+            for key in sequence:
+                if key['state'] == 'down':
+                    sequence_string += f"{key['name']} "
 
-                #simplify the recording string
-                sequence_string = ""
-                for key in sequence:
-                    if key['state'] == 'down':
-                        sequence_string += f"{key['name']} "
+            Log.i(f"Recorded: {sequence_string}")
 
-                Log.i(f"Recorded: {sequence_string}")
+            #find the corresponding macro in list and then update it
+            with macro_mutex:
+                for macro in macro_list:
+                    if record_macro['name'] != macro['name']:
+                        continue
 
-                record_macro['sequence'] = sequence
+                    if 'play_hotkey' in record_macro and ('play_hotkey' not in macro or (HotKeys.list_to_string(record_macro['play_hotkey']) != HotKeys.list_to_string(macro['play_hotkey']))):
+                        continue
 
-                Sequences.save_sequence(record_macro['filename'], record_macro['sequence'])
-                record_macro['lastplay'] = time.time()
-                record_macro = None
+                    if 'record_hotkey' in record_macro and ('record_hotkey' not in macro or (HotKeys.list_to_string(record_macro['record_hotkey']) != HotKeys.list_to_string(macro['record_hotkey']))):
+                        continue
 
-            elif play_queue.qsize() > 0:
-                macro = play_queue.get()
+                    Sequences.save_sequence(record_macro['filename'], sequence)
+                    macro['sequence'] = sequence
+                    macro['lastplay'] = time.time()
 
-                Log.i(f"Playing - {macro['name']}")
-                play_active = True
-                try:
-                    for key in macro['sequence']:
-                        #Find delay between keys
-                        if macro['playback_speed'] > 0:
-                            delay_time = (key['delay'] if 'delay' in key else macro['playback_delay']) / macro['playback_speed']
+                    Log.i(f"Updated sequence for [{macro['name']}]")
+                    break
 
-                        else:
+            record_macro = None
+
+        elif play_queue.qsize() > 0:
+            macro = play_queue.get()
+
+            Log.i(f"Playing - {macro['name']}")
+            play_active = True
+            try:
+                for key in macro['sequence']:
+                    #Find delay between keys
+                    if macro['playback_speed'] > 0:
+                        delay_time = (key['delay'] if 'delay' in key else macro['playback_delay']) / macro['playback_speed']
+
+                    else:
+                        delay_time = 0
+
+                    #Find out if this is a move, wheel, button or key event
+                    if key['name'] == ('mouse_move'):
+                        if settings['use_mouse_wheel'].value:
+                            mouse_position = key['state'].split(':')
+                            mouse.move(mouse_position[0], mouse_position[1], True, delay_time)
                             delay_time = 0
 
-                        #Find out if this is a move, wheel, button or key event
-                        if key['name'] == ('mouse_move'):
-                            if settings['use_mouse_wheel'].value:
-                                mouse_position = key['state'].split(':')
-                                mouse.move(mouse_position[0], mouse_position[1], True, delay_time)
-                                delay_time = 0
+                    elif key['name'].startswith('mouse_wheel_'):
+                        if settings['use_mouse_wheel'].value:
+                            key_sub = key['name'][12:]
 
-                        elif key['name'].startswith('mouse_wheel_'):
-                            if settings['use_mouse_wheel'].value:
-                                key_sub = key['name'][12:]
+                            if key_sub == DOWN:
+                                mouse.wheel(-1)
 
-                                if key_sub == DOWN:
-                                    mouse.wheel(-1)
+                            elif key_sub == UP:
+                                mouse.wheel(1)
 
-                                elif key_sub == UP:
-                                    mouse.wheel(1)
+                    elif key['name'].startswith('mouse_'):
+                        if settings['use_mouse'].value:
+                            key_sub = key['name'][6:]
 
-                        elif key['name'].startswith('mouse_'):
-                            if settings['use_mouse'].value:
-                                key_sub = key['name'][6:]
+                            if key['state'] == DOWN:
+                                mouse.press(key_sub)
 
-                                if key['state'] == DOWN:
-                                    mouse.press(key_sub)
+                            else:
+                                mouse.release(key_sub)
 
-                                else:
-                                    mouse.release(key_sub)
+                    elif settings['use_keyboard'].value:
+                        keyboard.send(key['name'], key['state'] == DOWN, key['state'] == UP)
 
-                        elif settings['use_keyboard'].value:
-                            keyboard.send(key['name'], key['state'] == DOWN, key['state'] == UP)
+                    #Wait for the next key event
+                    time.sleep(delay_time)
 
-                        #Wait for the next key event
-                        time.sleep(delay_time)
+            except Exception as e:
+                Log.i(f"Failed - {e}")
 
-                except Exception as e:
-                    Log.i(f"Failed - {e}")
-
-                play_active = False
+            play_active = False
 
         time.sleep(settings['default_playback_delay'].value)
 
 
-### Main ###
+"""
+__main__: main function used to load config file and start application
+"""
 if __name__ == "__main__":
     Log.i(f"Starting keyboard_macro {Constants.APP_VERSION}")
 
@@ -344,13 +395,13 @@ if __name__ == "__main__":
     if settings['use_mouse'].value:
         mouse.hook(on_mouse_event)
 
-    # Start the macro handling thread
-    macro_thread = threading.Thread(target=macro_thread_task, args=())
-    macro_thread.start()
-
     # Start application
     if settings['use_gui'].value:
         Helpers.minimize_console()
+
+        # Start the macro handling thread
+        macro_thread = threading.Thread(target=macro_thread_task, args=())
+        macro_thread.start()
 
         app = QApplication(sys.argv)
         main_window = MainWindow(f"keyboard_macro {Constants.APP_VERSION}", settings, macro_list, macro_mutex)
@@ -365,8 +416,10 @@ if __name__ == "__main__":
         if settings['start_minimized'].value:
             Helpers.minimize_console()
 
+        #route Log output to console
         Log.set_output(print)
         Log.dump_buffer()
 
+        #run thread task in console thread
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
-        macro_thread.join()
+        macro_thread_task()

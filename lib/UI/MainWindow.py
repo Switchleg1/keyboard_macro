@@ -1,11 +1,12 @@
 import time
+import queue
 import lib.Constants as Constants
 import lib.HotKeys as HotKeys
 import lib.Sequences as Sequences
 import lib.ConfigFile as ConfigFile
 import lib.Log as Log
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QAbstractItemView, QFileDialog, QPushButton, QListWidget, QListWidgetItem
-from PyQt6.QtCore import QSize
+from PyQt6.QtCore import QSize, QTimer
 from PyQt6.QtGui import QFontMetrics, QFont
 
 
@@ -81,13 +82,17 @@ class MainWindow(QMainWindow):
 
         self.mainLayoutBox.addWidget(self.listViewLog)
 
+        #get font height and use it to size log entries
         font = self.listViewLog.font()
         font_metrics = QFontMetrics(font)
         self.text_height = font_metrics.boundingRect("X").height() + 1
 
-        Log.set_output(self._writeLog)
-        Log.dump_buffer()
+        #start a timer to check the log queue
+        logTimer = QTimer(self)
+        logTimer.timeout.connect(self._processLogQueue)
+        logTimer.start(100)
 
+        #set main layout and display
         widget = QWidget()
         widget.setLayout(self.mainLayoutBox)
         self.setGeometry(300, 300, 975, 600)
@@ -281,10 +286,13 @@ class MainWindow(QMainWindow):
         self.macroTable.cellChanged.connect(self.onMacroCellChanged)
 
 
-    def _writeLog(self, out):
-        item = QListWidgetItem()
-        item.setText(out)
-        item.setSizeHint(QSize(10000, self.text_height))
+    def _processLogQueue(self):
+        log_entries = Log.receive_buffer(10)
 
-        self.listViewLog.addItem(item)
-        self.listViewLog.scrollToBottom()
+        for entry in log_entries:
+            item = QListWidgetItem()
+            item.setText(entry)
+            item.setSizeHint(QSize(10000, self.text_height))
+
+            self.listViewLog.addItem(item)
+            self.listViewLog.scrollToBottom()
